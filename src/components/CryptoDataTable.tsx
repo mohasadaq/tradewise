@@ -36,7 +36,7 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
   let className = "";
   let IconComponent = HelpCircle;
 
-  switch (level.toLowerCase()) {
+  switch (level?.toLowerCase()) {
     case "high":
       variant = "default"; 
       className = "bg-accent text-accent-foreground hover:bg-accent/90";
@@ -58,7 +58,7 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
   return (
     <Badge variant={variant} className={`capitalize ${className} flex items-center gap-1.5 text-xs`}>
       <IconComponent className="h-3.5 w-3.5" />
-      {level}
+      {level || "N/A"}
     </Badge>
   );
 };
@@ -70,11 +70,11 @@ const SignalDisplay = ({ signal }: { signal: string }) => {
   switch (signal?.toLowerCase()) {
     case "buy":
       IconComponent = TrendingUp;
-      textColor = "text-accent-foreground"; // Or a specific green like text-green-500 if defined
+      textColor = "text-accent-foreground"; 
       break;
     case "sell":
       IconComponent = TrendingDown;
-      textColor = "text-destructive"; // Or a specific red like text-red-500 if defined
+      textColor = "text-destructive"; 
       break;
     case "hold":
       IconComponent = Minus;
@@ -111,22 +111,25 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
   };
 
+  const tableHeaders = [
+    { key: "coin", label: "Coin" },
+    { key: "currentPrice", label: "Current Price" },
+    { key: "entryPrice", label: "Entry Price" },
+    { key: "exitPrice", label: "Exit Price" },
+    { key: "signal", label: "Signal" },
+    { key: "confidenceLevel", label: "Confidence" },
+    { key: null, label: "Technical Indicators" },
+    { key: null, label: "Order Book Analysis" },
+  ] as const;
+
+
   return (
     <TooltipProvider>
       <div className="rounded-lg border shadow-md overflow-hidden bg-card">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-card">
-              {[
-                { key: "coin", label: "Coin" },
-                { key: "currentPrice", label: "Current Price" },
-                { key: "entryPrice", label: "Entry Price" },
-                { key: "exitPrice", label: "Exit Price" },
-                { key: "signal", label: "Signal" },
-                { key: "confidenceLevel", label: "Confidence" },
-                { key: null, label: "Technical Indicators" },
-                { key: null, label: "Order Book Analysis" },
-              ].map((header) => (
+              {tableHeaders.map((header) => (
                 <TableHead key={header.label} className="px-4 py-3">
                   {header.key ? (
                      <Button variant="ghost" onClick={() => onSort(header.key as SortKey)} className="px-1 py-1 h-auto text-xs sm:text-sm">
@@ -143,7 +146,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
           <TableBody>
             {recommendations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={tableHeaders.length} className="h-24 text-center text-muted-foreground">
                   No recommendations available. Try analyzing some coins.
                 </TableCell>
               </TableRow>
@@ -170,7 +173,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                       <TooltipContent className="max-w-xs bg-popover text-popover-foreground p-3 rounded-md shadow-lg">
                         <p className="font-semibold mb-1">Technical Indicators:</p>
                         <ul className="list-disc list-inside text-sm space-y-0.5">
-                          {rec.technicalIndicators.map((indicator, idx) => (
+                          {rec.technicalIndicators && rec.technicalIndicators.map((indicator, idx) => (
                             <li key={idx}>{indicator}</li>
                           ))}
                         </ul>

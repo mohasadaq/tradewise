@@ -1,7 +1,8 @@
+
 'use server';
 
 /**
- * @fileOverview Analyzes crypto coins using technical analysis and order book data to recommend coins for trading, including entry and exit prices.
+ * @fileOverview Analyzes crypto coins using technical analysis and order book data to recommend coins for trading, including entry and exit prices, and a trading signal.
  *
  * - analyzeCryptoTrades - A function that analyzes crypto coins and provides trading recommendations.
  * - AnalyzeCryptoTradesInput - The input type for the analyzeCryptoTrades function.

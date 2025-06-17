@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -11,12 +12,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SkeletonTable({ rows = 5 }: { rows?: number }) {
+  const numColumns = 8; // Coin, Current Price, Entry, Exit, Signal, Confidence, Indicators, Order Book
+
   return (
     <div className="rounded-lg border shadow-md overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-card">
-            {Array.from({ length: 8 }).map((_, index) => ( 
+            {Array.from({ length: numColumns }).map((_, index) => ( 
               <TableHead key={index} className="px-4 py-3">
                 <Skeleton className="h-5 w-20" />
               </TableHead>
