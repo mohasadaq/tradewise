@@ -70,7 +70,7 @@ const SignalDisplay = ({ signal }: { signal: string }) => {
   switch (signal?.toLowerCase()) {
     case "buy":
       IconComponent = TrendingUp;
-      textColor = "text-accent-foreground"; // Using accent for buy, which is green in dark theme
+      textColor = "text-accent"; // Use the green accent color for "Buy"
       break;
     case "sell":
       IconComponent = TrendingDown;
@@ -121,8 +121,8 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     { key: "exitPrice", label: "Exit Price" },
     { key: "signal", label: "Signal" },
     { key: "confidenceLevel", label: "Confidence" },
-    { key: null, label: "Indicators" },
-    { key: null, label: "Analysis" },
+    { key: null, label: "Indicators" }, // Shortened for mobile
+    { key: null, label: "Analysis" },   // Shortened for mobile
   ] as const;
 
 

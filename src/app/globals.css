@@ -45,8 +45,8 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 55% 25%; /* Darker Navy for Popovers */
     --popover-foreground: 0 0% 98%;
-    --primary: 182 100% 74%; /* Electric Blue */
-    --primary-foreground: 240 50% 15%; /* Darker Navy for text on Electric Blue */
+    --primary: 210 80% 65%; /* Refined Blue */
+    --primary-foreground: 0 0% 98%; /* White text on Refined Blue */
     --secondary: 240 50% 40%; /* Lighter Navy Variant */
     --secondary-foreground: 0 0% 98%;
     --muted: 240 50% 35%;
@@ -57,7 +57,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 50% 45%; /* Visible Border Color */
     --input: 240 50% 45%; /* Input Background */
-    --ring: 182 100% 74%; /* Primary color for rings */
+    --ring: 210 80% 65%; /* Primary color for rings (matches new primary) */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -65,12 +65,12 @@
     --chart-5: 340 75% 55%;
     --sidebar-background: 240 64% 22%;
     --sidebar-foreground: 0 0% 80%;
-    --sidebar-primary: 182 100% 74%;
-    --sidebar-primary-foreground: 240 50% 15%;
+    --sidebar-primary: 210 80% 65%; /* Matched to new primary */
+    --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 141 53% 55%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 60% 30%;
-    --sidebar-ring: 182 100% 74%;
+    --sidebar-ring: 210 80% 65%; /* Matched to new primary ring */
   }
 }
 
@@ -79,6 +79,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body antialiased;
   }
 }
