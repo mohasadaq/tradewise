@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
-type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { coinName: string };
+type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { coinName: string; tradingStrategy?: string };
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
 const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
@@ -123,6 +123,7 @@ export default function TradeWisePage() {
             ...rec,
             currentPrice: matchedMarketData?.current_price ?? rec.currentPrice,
             coinName: matchedMarketData?.name ?? rec.coinName,
+            tradingStrategy: rec.tradingStrategy || "N/A",
           };
         });
         setRecommendations(updatedRecommendations);
@@ -156,19 +157,17 @@ export default function TradeWisePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, selectedTimeFrame]); // Added selectedTimeFrame to dependencies for auto-refresh
+  }, [toast, selectedTimeFrame]);
 
   useEffect(() => {
-    // Initial load with default symbols (empty) and default time frame
     performAnalysis(undefined, DEFAULT_TIME_FRAME, true); 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array, performAnalysis is memoized
+  }, []); 
 
   useEffect(() => {
-    // Auto-refresh interval
     const intervalId = setInterval(() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame, true), REFRESH_INTERVAL);
     return () => clearInterval(intervalId);
-  }, [performAnalysis, searchQuery, selectedTimeFrame]); // searchQuery & selectedTimeFrame for auto-refresh with current settings
+  }, [performAnalysis, searchQuery, selectedTimeFrame]); 
 
   const handleAnalyzeCoins = () => {
     performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame);
@@ -180,11 +179,20 @@ export default function TradeWisePage() {
     setSortKey("confidenceLevel");
     setSortDirection("desc");
     setSelectedTimeFrame(DEFAULT_TIME_FRAME);
-    performAnalysis(undefined, DEFAULT_TIME_FRAME); // Reset to top coins with default time frame
+    performAnalysis(undefined, DEFAULT_TIME_FRAME); 
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
     let filtered = [...recommendations];
+    
+    if (searchQuery.trim()) {
+        const lowerCaseQuery = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(
+            (rec) =>
+            rec.coin.toLowerCase().includes(lowerCaseQuery) ||
+            rec.coinName.toLowerCase().includes(lowerCaseQuery)
+        );
+    }
     
     if (confidenceFilter !== "All") {
       filtered = filtered.filter(
@@ -236,7 +244,7 @@ export default function TradeWisePage() {
     });
 
     return filtered;
-  }, [recommendations, confidenceFilter, sortKey, sortDirection]);
+  }, [recommendations, searchQuery, confidenceFilter, sortKey, sortDirection]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {

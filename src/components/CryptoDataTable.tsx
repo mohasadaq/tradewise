@@ -17,12 +17,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus } from "lucide-react";
+import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, Brain } from "lucide-react";
 import type { AnalyzeCryptoTradesOutput } from "@/ai/flows/analyze-crypto-trades";
 import type { SortKey, SortDirection } from "./FilterSortControls";
 import { cn } from "@/lib/utils";
 
-type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0];
+type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { tradingStrategy?: string };
 
 interface CryptoDataTableProps {
   recommendations: TradingRecommendation[];
@@ -70,7 +70,7 @@ const SignalDisplay = ({ signal }: { signal: string }) => {
   switch (signal?.toLowerCase()) {
     case "buy":
       IconComponent = TrendingUp;
-      textColor = "text-accent"; // Use the green accent color for "Buy"
+      textColor = "text-accent";
       break;
     case "sell":
       IconComponent = TrendingDown;
@@ -120,9 +120,10 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     { key: "entryPrice", label: "Entry Price" },
     { key: "exitPrice", label: "Exit Price" },
     { key: "signal", label: "Signal" },
+    { key: null, label: "Strategy" }, // New column, not sortable for now
     { key: "confidenceLevel", label: "Confidence" },
-    { key: null, label: "Indicators" }, // Shortened for mobile
-    { key: null, label: "Analysis" },   // Shortened for mobile
+    { key: null, label: "Indicators" }, 
+    { key: null, label: "Analysis" },   
   ] as const;
 
 
@@ -163,6 +164,20 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.exitPrice)}</TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
                         <SignalDisplay signal={rec.signal} />
+                    </TableCell>
+                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-nowrap">
+                        <Tooltip delayDuration={100}>
+                            <TooltipTrigger asChild>
+                                <span className="flex items-center gap-1 cursor-default">
+                                    <Brain className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary/80" /> 
+                                    {rec.tradingStrategy || "N/A"}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[200px] sm:max-w-xs bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">
+                                <p className="font-semibold mb-1 text-xs sm:text-sm">Suggested Strategy:</p>
+                                <p className="text-xs sm:text-sm">{rec.tradingStrategy || "Not specified"}</p>
+                            </TooltipContent>
+                        </Tooltip>
                     </TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
                         <ConfidenceBadge level={rec.confidenceLevel} />

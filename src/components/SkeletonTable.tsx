@@ -12,7 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SkeletonTable({ rows = 5 }: { rows?: number }) {
-  const numColumns = 8; 
+  const numColumns = 9; // Increased to 9 for the new "Strategy" column
 
   return (
     <div className="rounded-lg border shadow-md overflow-hidden bg-card">
@@ -35,6 +35,7 @@ export default function SkeletonTable({ rows = 5 }: { rows?: number }) {
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell> 
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell> 
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-16 sm:w-20" /></TableCell> 
+                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-28" /></TableCell> {/* Strategy column */}
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-7 sm:h-8 w-16 sm:w-20 rounded-full" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
