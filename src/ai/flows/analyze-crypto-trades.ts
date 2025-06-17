@@ -48,7 +48,7 @@ const AnalyzeCryptoTradesOutputSchema = z.object({
         .array(z.string())
         .describe('Key technical indicators supporting the recommendation (e.g., RSI, MACD crossover, Bollinger Bands). These should consider the selected_time_frame.'),
       orderBookAnalysis: z.string().describe('Summary of inferred order book analysis or market sentiment.'),
-      tradingStrategy: z.string().optional().describe('The suggested trading strategy (e.g., Day Trade, Swing Trade, Scalping, Position Trade) appropriate for the selected_time_frame and analysis.'),
+      tradingStrategy: z.string().optional().describe('The suggested trading strategy including its typical duration (e.g., "Day Trade (intra-day, up to 24h)", "Swing Trade (days to weeks)") appropriate for the selected_time_frame and analysis.'),
     })
   ).describe('A list of trading recommendations for the specified crypto coins.'),
 });
@@ -93,7 +93,7 @@ For each coin, provide:
 7.  'confidenceLevel': Your confidence in this recommendation: "High", "Medium", or "Low".
 8.  'technicalIndicators': A list of 3-5 key technical indicators or chart patterns that support your recommendation. Ensure these indicators are relevant to the 'selected_time_frame' context and the suggested tradingStrategy.
 9.  'orderBookAnalysis': A brief summary of inferred order book dynamics or market sentiment based on the provided data and general market knowledge.
-10. 'tradingStrategy': Based on the 'selected_time_frame' (e.g., '1h', '24h', '7d', '30d') and your overall analysis, suggest an appropriate trading strategy. Examples: "Scalping" or "Short-term Day Trade" for 1h; "Day Trade" or "Short Swing" for 24h; "Swing Trade" for 7d; "Longer Swing Trade" or "Position Entry" for 30d. The strategy should align with the entry/exit prices and technical indicators.
+10. 'tradingStrategy': Based on the 'selected_time_frame' (e.g., '1h', '24h', '7d', '30d') and your overall analysis, suggest an appropriate trading strategy. This strategy description MUST include a typical holding period or duration relevant to the selected_time_frame. Examples: "Scalping (minutes to few hours)" for 1h; "Day Trade (intra-day, up to 24h)" for 24h; "Swing Trade (days to a few weeks)" for 7d; "Longer Swing Trade / Position Entry (weeks to months)" for 30d. The strategy and its duration should align with the entry/exit prices and technical indicators.
 
 Format your entire response as a single JSON object matching the output schema, containing a 'tradingRecommendations' array. Each object in the array must pertain to one of the analyzed coins.
 Ensure all fields in the output schema are populated, including 'tradingStrategy'. If a value cannot be determined, use null where appropriate for number fields, or a descriptive string like "N/A" for string fields if absolutely necessary.
