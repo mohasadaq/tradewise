@@ -120,7 +120,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     { key: "entryPrice", label: "Entry Price" },
     { key: "exitPrice", label: "Exit Price" },
     { key: "signal", label: "Signal" },
-    { key: null, label: "Strategy" }, // New column, not sortable for now
+    { key: null, label: "Strategy" }, 
     { key: "confidenceLevel", label: "Confidence" },
     { key: null, label: "Indicators" }, 
     { key: null, label: "Analysis" },   
@@ -137,7 +137,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                 {tableHeaders.map((header) => (
                     <TableHead key={header.label} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
                     {header.key ? (
-                        <Button variant="ghost" onClick={() => onSort(header.key as SortKey)} className="px-1 py-1 h-auto text-xs sm:text-sm">
+                        <Button variant="ghost" onClick={() => onSort(header.key as SortKey)} className="px-2 py-1 h-auto text-xs sm:text-sm">
                         {header.label}
                         {renderSortIcon(header.key as SortKey)}
                         </Button>
@@ -158,7 +158,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                 ) : (
                 recommendations.map((rec) => (
                     <TableRow key={rec.coin} className="hover:bg-muted/50">
-                    <TableCell className="font-medium px-2 py-2 sm:px-4 sm:py-3 uppercase text-xs sm:text-sm whitespace-nowrap">{rec.coin}</TableCell>
+                    <TableCell className="font-medium px-2 py-2 sm:px-4 sm:py-3 uppercase text-xs sm:text-sm whitespace-nowrap">{rec.coinName} ({rec.coin})</TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.currentPrice)}</TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.entryPrice)}</TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.exitPrice)}</TableCell>
