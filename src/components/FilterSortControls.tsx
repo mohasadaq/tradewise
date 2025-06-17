@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Filter, ListRestart } from "lucide-react";
 
 export type ConfidenceFilter = "All" | "High" | "Medium" | "Low";
-export type SortKey = "coin" | "currentPrice" | "entryPrice" | "exitPrice" | "confidenceLevel";
+export type SortKey = "coin" | "currentPrice" | "entryPrice" | "exitPrice" | "signal" | "confidenceLevel";
 export type SortDirection = "asc" | "desc";
 
 interface FilterSortControlsProps {
@@ -91,6 +91,7 @@ export default function FilterSortControls({
                     <SelectItem value="currentPrice">Current Price</SelectItem>
                     <SelectItem value="entryPrice">Entry Price</SelectItem>
                     <SelectItem value="exitPrice">Exit Price</SelectItem>
+                    <SelectItem value="signal">Signal</SelectItem>
                     <SelectItem value="confidenceLevel">Confidence</SelectItem>
                     </SelectContent>
                 </Select>

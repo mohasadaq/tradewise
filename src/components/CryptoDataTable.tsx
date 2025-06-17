@@ -17,9 +17,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle } from "lucide-react";
+import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus } from "lucide-react";
 import type { AnalyzeCryptoTradesOutput } from "@/ai/flows/analyze-crypto-trades";
 import type { SortKey, SortDirection } from "./FilterSortControls";
+import { cn } from "@/lib/utils";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0];
 
@@ -62,6 +63,36 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
   );
 };
 
+const SignalDisplay = ({ signal }: { signal: string }) => {
+  let IconComponent = HelpCircle;
+  let textColor = "text-muted-foreground";
+
+  switch (signal?.toLowerCase()) {
+    case "buy":
+      IconComponent = TrendingUp;
+      textColor = "text-accent-foreground"; // Or a specific green like text-green-500 if defined
+      break;
+    case "sell":
+      IconComponent = TrendingDown;
+      textColor = "text-destructive"; // Or a specific red like text-red-500 if defined
+      break;
+    case "hold":
+      IconComponent = Minus;
+      textColor = "text-muted-foreground";
+      break;
+    default:
+      IconComponent = HelpCircle;
+  }
+
+  return (
+    <span className={cn("flex items-center gap-1.5 capitalize", textColor)}>
+      <IconComponent className="h-4 w-4" />
+      {signal || "N/A"}
+    </span>
+  );
+};
+
+
 const formatPrice = (price: number | undefined | null) => {
   if (typeof price !== 'number' || isNaN(price)) {
     return "N/A";
@@ -91,6 +122,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                 { key: "currentPrice", label: "Current Price" },
                 { key: "entryPrice", label: "Entry Price" },
                 { key: "exitPrice", label: "Exit Price" },
+                { key: "signal", label: "Signal" },
                 { key: "confidenceLevel", label: "Confidence" },
                 { key: null, label: "Technical Indicators" },
                 { key: null, label: "Order Book Analysis" },
@@ -111,7 +143,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
           <TableBody>
             {recommendations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   No recommendations available. Try analyzing some coins.
                 </TableCell>
               </TableRow>
@@ -122,6 +154,9 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                   <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.currentPrice)}</TableCell>
                   <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.entryPrice)}</TableCell>
                   <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.exitPrice)}</TableCell>
+                  <TableCell className="px-4 py-3">
+                    <SignalDisplay signal={rec.signal} />
+                  </TableCell>
                   <TableCell className="px-4 py-3">
                     <ConfidenceBadge level={rec.confidenceLevel} />
                   </TableCell>

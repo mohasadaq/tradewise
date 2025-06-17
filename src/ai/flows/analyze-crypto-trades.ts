@@ -27,6 +27,7 @@ const AnalyzeCryptoTradesOutputSchema = z.object({
       currentPrice: z.number().describe('The current market price of the coin.'),
       entryPrice: z.number().describe('The recommended entry price for the coin.'),
       exitPrice: z.number().describe('The recommended exit price for the coin.'),
+      signal: z.string().describe('The trading signal (Buy, Sell, or Hold).'),
       confidenceLevel: z
         .string()
         .describe('The confidence level of the recommendation (High, Medium, Low).'),
@@ -47,7 +48,7 @@ const analyzeCryptoTradesPrompt = ai.definePrompt({
   name: 'analyzeCryptoTradesPrompt',
   input: {schema: AnalyzeCryptoTradesInputSchema},
   output: {schema: AnalyzeCryptoTradesOutputSchema},
-  prompt: `You are an AI-powered crypto trading analyst. Analyze the following crypto coins based on technical analysis and order book data to provide trading recommendations, including their current price, recommended entry and exit prices, confidence levels, and key indicators.\n\nCoins to analyze: {{{coinList}}}\n\nFormat your response as a JSON array of trading recommendations.  Each object in the array should contain the coin ticker, current price, recommended entry price, recommended exit price, a confidence level (High, Medium, Low), a list of technical indicators, and a summary of the order book analysis.\n`,
+  prompt: `You are an AI-powered crypto trading analyst. Analyze the following crypto coins based on technical analysis and order book data to provide trading recommendations. For each coin, include its current price, recommended entry price, recommended exit price, a trading signal (Buy, Sell, or Hold), a confidence level (High, Medium, Low), a list of key technical indicators supporting the recommendation, and a summary of the order book analysis.\n\nCoins to analyze: {{{coinList}}}\n\nFormat your response as a JSON array of trading recommendations. Each object in the array should contain the coin ticker, current price, recommended entry price, recommended exit price, signal, confidence level, technical indicators, and order book analysis.`,
 });
 
 const analyzeCryptoTradesFlow = ai.defineFlow(

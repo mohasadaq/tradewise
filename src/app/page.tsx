@@ -113,6 +113,8 @@ export default function TradeWisePage() {
     }
 
     const confidenceOrder: { [key: string]: number } = { high: 0, medium: 1, low: 2 };
+    const signalOrder: { [key: string]: number } = { buy: 0, hold: 1, sell: 2 };
+
 
     filtered.sort((a, b) => {
       let valA, valB;
@@ -132,6 +134,10 @@ export default function TradeWisePage() {
         case "exitPrice":
           valA = a.exitPrice;
           valB = b.exitPrice;
+          break;
+        case "signal":
+          valA = signalOrder[a.signal?.toLowerCase()] ?? 3;
+          valB = signalOrder[b.signal?.toLowerCase()] ?? 3;
           break;
         case "confidenceLevel":
           valA = confidenceOrder[a.confidenceLevel.toLowerCase()] ?? 3;
