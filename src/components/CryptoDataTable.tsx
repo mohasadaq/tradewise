@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -61,7 +62,10 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
   );
 };
 
-const formatPrice = (price: number) => {
+const formatPrice = (price: number | undefined | null) => {
+  if (typeof price !== 'number' || isNaN(price)) {
+    return "N/A";
+  }
   if (price >= 1) {
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
