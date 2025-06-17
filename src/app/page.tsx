@@ -18,8 +18,16 @@ import { AlertTriangle } from "lucide-react";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { coinName: string };
 
-const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5; 
+const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
 const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+
+const STABLECOIN_SYMBOLS: string[] = [
+  'usdt', 'usdc', 'busd', 'dai', 'tusd', 'usdp', 'gusd', 'fdusd', 'usdd', 'frax', 'lusd', 'pax'
+];
+
+function isStablecoin(symbol: string): boolean {
+  return STABLECOIN_SYMBOLS.includes(symbol.toLowerCase());
+}
 
 export default function TradeWisePage() {
   const [recommendations, setRecommendations] = useState<TradingRecommendation[]>([]);
@@ -37,21 +45,23 @@ export default function TradeWisePage() {
     setIsLoading(true);
     setError(null);
     let fetchToastId: string | null = null;
-    if (!isAutoRefresh && !coinSymbolsToFetch) {
-       fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing top ${NUMBER_OF_COINS_TO_FETCH_DEFAULT} coins.`}).id;
-    } else if (!isAutoRefresh && coinSymbolsToFetch) {
-        fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing symbols: ${coinSymbolsToFetch}`}).id;
+
+    const isSearchingSpecificSymbols = coinSymbolsToFetch && coinSymbolsToFetch.trim() !== "";
+    const analysisTargetDescription = isSearchingSpecificSymbols ? `symbols: ${coinSymbolsToFetch}` : `top ${NUMBER_OF_COINS_TO_FETCH_DEFAULT} coins`;
+
+    if (!isAutoRefresh) {
+       fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing ${analysisTargetDescription}.`}).id;
     }
 
     try {
       const marketData: CryptoCoinData[] = await fetchCoinData(
         NUMBER_OF_COINS_TO_FETCH_DEFAULT,
-        coinSymbolsToFetch 
+        coinSymbolsToFetch
       );
 
       if (!marketData || marketData.length === 0) {
         setRecommendations([]);
-        const message = coinSymbolsToFetch ? `No market data found for the specified symbols: ${coinSymbolsToFetch}. Please check the symbols and try again.` : "No market data found from CoinGecko for top coins.";
+        const message = isSearchingSpecificSymbols ? `No market data found for the specified symbols: ${coinSymbolsToFetch}. Please check the symbols and try again.` : `No market data found from CoinGecko for top coins.`;
         setError(message);
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Market Data Error", description: message, variant: "destructive" });
@@ -61,13 +71,28 @@ export default function TradeWisePage() {
         setIsLoading(false);
         return;
       }
+
+      const nonStableMarketData = marketData.filter(coin => !isStablecoin(coin.symbol));
+
+      if (nonStableMarketData.length === 0) {
+        setRecommendations([]);
+        const message = isSearchingSpecificSymbols ? `No non-stablecoin market data found for analysis among the specified symbols: ${coinSymbolsToFetch}.` : "No non-stablecoins found for analysis among the top fetched coins.";
+        setError(message);
+        if (fetchToastId) {
+          toast({id: fetchToastId, title: "No Coins for Analysis", description: message, variant: "destructive" });
+        } else if (!isAutoRefresh) {
+          toast({ title: "No Coins for Analysis", description: message, variant: "destructive" });
+        }
+        setIsLoading(false);
+        return;
+      }
       
       if (fetchToastId) {
-        toast({id: fetchToastId, title: "Market Data Fetched", description: "Starting AI analysis..."});
+        toast({id: fetchToastId, title: "Market Data Fetched", description: `Found ${nonStableMarketData.length} non-stablecoin(s). Starting AI analysis...`});
       }
 
-      const aiInputData: AICoinAnalysisInputData[] = marketData.map(md => ({
-        id: md.id, 
+      const aiInputData: AICoinAnalysisInputData[] = nonStableMarketData.map(md => ({
+        id: md.id,
         symbol: md.symbol,
         name: md.name,
         current_price: md.current_price,
@@ -82,18 +107,18 @@ export default function TradeWisePage() {
 
       if (result && result.tradingRecommendations) {
         const updatedRecommendations: TradingRecommendation[] = result.tradingRecommendations.map(rec => {
-          const matchedMarketData = marketData.find(
+          const matchedMarketData = nonStableMarketData.find( // Match against nonStableMarketData
              md => md.symbol.toLowerCase() === rec.coin.toLowerCase() || md.name.toLowerCase() === rec.coinName.toLowerCase()
           );
           return {
             ...rec,
             currentPrice: matchedMarketData?.current_price ?? rec.currentPrice,
-            coinName: matchedMarketData?.name ?? rec.coinName, 
+            coinName: matchedMarketData?.name ?? rec.coinName,
           };
         });
         setRecommendations(updatedRecommendations);
         setLastUpdated(new Date());
-        const successMessage = `Found ${updatedRecommendations.length} recommendations for ${coinSymbolsToFetch ? `symbols: ${coinSymbolsToFetch}` : `top ${marketData.length} coins`}.`;
+        const successMessage = `Found ${updatedRecommendations.length} recommendations for ${nonStableMarketData.length} non-stablecoin(s) from ${analysisTargetDescription}.`;
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Analysis Complete", description: successMessage });
         } else if (!isAutoRefresh) {
@@ -125,17 +150,17 @@ export default function TradeWisePage() {
   }, [toast]);
 
   useEffect(() => {
-    performAnalysis(undefined, true); 
+    performAnalysis(undefined, true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []);
 
   useEffect(() => {
-    const intervalId = setInterval(() => performAnalysis(undefined, true), REFRESH_INTERVAL); 
+    const intervalId = setInterval(() => performAnalysis(undefined, true), REFRESH_INTERVAL);
     return () => clearInterval(intervalId);
   }, [performAnalysis]);
 
   const handleAnalyzeCoins = () => {
-    performAnalysis(searchQuery.trim() || undefined); 
+    performAnalysis(searchQuery.trim() || undefined);
   };
   
   const handleResetFilters = () => {
@@ -143,7 +168,7 @@ export default function TradeWisePage() {
     setConfidenceFilter("All");
     setSortKey("confidenceLevel");
     setSortDirection("desc");
-    performAnalysis(undefined); 
+    performAnalysis(undefined);
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
@@ -162,7 +187,7 @@ export default function TradeWisePage() {
       let valA, valB;
       switch (sortKey) {
         case "coin":
-          valA = a.coinName; 
+          valA = a.coinName;
           valB = b.coinName;
           break;
         case "currentPrice":
@@ -206,7 +231,7 @@ export default function TradeWisePage() {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortKey(key);
-      setSortDirection("asc"); 
+      setSortDirection("asc");
     }
   };
 
@@ -214,7 +239,7 @@ export default function TradeWisePage() {
     <div className="flex flex-col min-h-screen bg-background">
       <TradewiseHeader
         lastUpdated={lastUpdated}
-        onRefresh={() => performAnalysis(searchQuery.trim() || undefined)} 
+        onRefresh={() => performAnalysis(searchQuery.trim() || undefined)}
         isRefreshing={isLoading}
       />
       <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-8 py-4 sm:py-8">
@@ -252,7 +277,7 @@ export default function TradeWisePage() {
         )}
       </main>
       <footer className="py-4 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/50">
-        TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Data from <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">CoinGecko</a>.
+        TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Stablecoins are excluded. Data from <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">CoinGecko</a>.
       </footer>
     </div>
   );
