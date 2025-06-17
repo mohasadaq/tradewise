@@ -51,18 +51,18 @@ export default function FilterSortControls({
         <div className="lg:col-span-1 md:col-span-2 space-y-2">
           <p className="text-sm font-medium text-foreground">Analysis Scope</p>
           <p className="text-xs text-muted-foreground">
-            Enter CoinGecko IDs (e.g. "bitcoin,ethereum") to search, or leave blank for top coins.
+            Enter coin symbols (e.g. "btc,eth") to search, or leave blank for top coins.
           </p>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="searchFilter">Search by CoinGecko IDs</Label>
+          <Label htmlFor="searchFilter">Search by Coin Symbols</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="searchFilter"
               type="text"
-              placeholder="e.g. bitcoin,ethereum,solana"
+              placeholder="e.g. btc,eth,sol"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-background"
@@ -131,7 +131,7 @@ export default function FilterSortControls({
         </Button>
         <Button onClick={onAnalyze} disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin': ''}`} /> 
-          {isLoading ? 'Analyzing...' : (searchQuery.trim() ? 'Analyze Searched IDs' : 'Analyze Top Coins')}
+          {isLoading ? 'Analyzing...' : (searchQuery.trim() ? 'Analyze Searched Symbols' : 'Analyze Top Coins')}
         </Button>
       </div>
     </div>

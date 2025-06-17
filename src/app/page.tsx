@@ -18,8 +18,8 @@ import { AlertTriangle } from "lucide-react";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { coinName: string };
 
-const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5; // Default when no search query
-const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes for auto-refresh of top coins
+const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5; 
+const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
 export default function TradeWisePage() {
   const [recommendations, setRecommendations] = useState<TradingRecommendation[]>([]);
@@ -28,31 +28,30 @@ export default function TradeWisePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  const [searchQuery, setSearchQuery] = useState(""); // Will hold comma-separated CoinGecko IDs
+  const [searchQuery, setSearchQuery] = useState(""); // Will hold comma-separated coin symbols
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
   const [sortKey, setSortKey] = useState<SortKey>("confidenceLevel");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
-  const performAnalysis = useCallback(async (coinIdsToFetch?: string, isAutoRefresh: boolean = false) => {
+  const performAnalysis = useCallback(async (coinSymbolsToFetch?: string, isAutoRefresh: boolean = false) => {
     setIsLoading(true);
     setError(null);
     let fetchToastId: string | null = null;
-    if (!isAutoRefresh && !coinIdsToFetch) {
+    if (!isAutoRefresh && !coinSymbolsToFetch) {
        fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing top ${NUMBER_OF_COINS_TO_FETCH_DEFAULT} coins.`}).id;
-    } else if (!isAutoRefresh && coinIdsToFetch) {
-        fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing: ${coinIdsToFetch}`}).id;
+    } else if (!isAutoRefresh && coinSymbolsToFetch) {
+        fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing symbols: ${coinSymbolsToFetch}`}).id;
     }
-
 
     try {
       const marketData: CryptoCoinData[] = await fetchCoinData(
         NUMBER_OF_COINS_TO_FETCH_DEFAULT,
-        coinIdsToFetch // Pass coinIds string if present
+        coinSymbolsToFetch 
       );
 
       if (!marketData || marketData.length === 0) {
         setRecommendations([]);
-        const message = coinIdsToFetch ? `No market data found for the specified CoinGecko IDs: ${coinIdsToFetch}. Please check the IDs.` : "No market data found from CoinGecko for top coins.";
+        const message = coinSymbolsToFetch ? `No market data found for the specified symbols: ${coinSymbolsToFetch}. Please check the symbols.` : "No market data found from CoinGecko for top coins.";
         setError(message);
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Market Data Error", description: message, variant: "destructive" });
@@ -66,7 +65,6 @@ export default function TradeWisePage() {
       if (fetchToastId) {
         toast({id: fetchToastId, title: "Market Data Fetched", description: "Starting AI analysis..."});
       }
-
 
       const aiInputData: AICoinAnalysisInputData[] = marketData.map(md => ({
         id: md.id, 
@@ -85,17 +83,17 @@ export default function TradeWisePage() {
       if (result && result.tradingRecommendations) {
         const updatedRecommendations: TradingRecommendation[] = result.tradingRecommendations.map(rec => {
           const matchedMarketData = marketData.find(
-            md => md.symbol.toLowerCase() === rec.coin.toLowerCase() || md.name.toLowerCase() === rec.coinName.toLowerCase()
+             md => md.symbol.toLowerCase() === rec.coin.toLowerCase() || md.name.toLowerCase() === rec.coinName.toLowerCase()
           );
           return {
             ...rec,
             currentPrice: matchedMarketData?.current_price ?? rec.currentPrice,
-            coinName: matchedMarketData?.name ?? rec.coinName,
+            coinName: matchedMarketData?.name ?? rec.coinName, // Ensure coinName is populated
           };
         });
         setRecommendations(updatedRecommendations);
         setLastUpdated(new Date());
-        const successMessage = `Found ${updatedRecommendations.length} recommendations for ${coinIdsToFetch ? `IDs: ${coinIdsToFetch}` : `top ${marketData.length} coins`}.`;
+        const successMessage = `Found ${updatedRecommendations.length} recommendations for ${coinSymbolsToFetch ? `symbols: ${coinSymbolsToFetch}` : `top ${marketData.length} coins`}.`;
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Analysis Complete", description: successMessage });
         } else if (!isAutoRefresh) {
@@ -126,21 +124,17 @@ export default function TradeWisePage() {
     }
   }, [toast]);
 
-  // Initial fetch for top N coins
   useEffect(() => {
-    performAnalysis(undefined, true); // Auto-refresh context for top N
+    performAnalysis(undefined, true); 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only on mount
+  }, []); 
 
-  // Interval refresh for top N coins
   useEffect(() => {
-    const intervalId = setInterval(() => performAnalysis(undefined, true), REFRESH_INTERVAL); // Auto-refresh for top N
+    const intervalId = setInterval(() => performAnalysis(undefined, true), REFRESH_INTERVAL); 
     return () => clearInterval(intervalId);
   }, [performAnalysis]);
 
   const handleAnalyzeCoins = () => {
-    // If searchQuery is empty, it will fetch top N coins.
-    // If searchQuery has IDs, it will fetch those specific coins.
     performAnalysis(searchQuery.trim() || undefined); 
   };
   
@@ -149,13 +143,13 @@ export default function TradeWisePage() {
     setConfidenceFilter("All");
     setSortKey("confidenceLevel");
     setSortDirection("desc");
-    performAnalysis(undefined); // Fetch top N coins on reset
+    performAnalysis(undefined); 
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
     let filtered = [...recommendations];
     
-    // Confidence filter (search filter is now handled by API call)
+    // Confidence filter is still client-side after data is fetched by API based on search query or top N
     if (confidenceFilter !== "All") {
       filtered = filtered.filter(
         (rec) => rec.confidenceLevel.toLowerCase() === confidenceFilter.toLowerCase()
@@ -169,7 +163,7 @@ export default function TradeWisePage() {
       let valA, valB;
       switch (sortKey) {
         case "coin":
-          valA = a.coinName;
+          valA = a.coinName; // Sorting by coinName for user readability
           valB = b.coinName;
           break;
         case "currentPrice":
@@ -221,7 +215,7 @@ export default function TradeWisePage() {
     <div className="flex flex-col min-h-screen bg-background">
       <TradewiseHeader
         lastUpdated={lastUpdated}
-        onRefresh={() => performAnalysis(searchQuery.trim() || undefined)} // Refresh current view (search or top N)
+        onRefresh={() => performAnalysis(searchQuery.trim() || undefined)} 
         isRefreshing={isLoading}
       />
       <main className="flex-grow container mx-auto px-4 md:px-8 py-8">
@@ -264,4 +258,3 @@ export default function TradeWisePage() {
     </div>
   );
 }
-
