@@ -19,7 +19,7 @@ import { AlertTriangle } from "lucide-react";
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0];
 
 const NUMBER_OF_COINS_TO_FETCH = 10; // Fetch top 10 coins
-const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
+const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
 export default function TradeWisePage() {
   const [recommendations, setRecommendations] = useState<TradingRecommendation[]>([]);
