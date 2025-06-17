@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { analyzeCryptoTrades, type AnalyzeCryptoTradesInput, type AnalyzeCryptoTradesOutput, type CoinDataInput } from "@/ai/flows/analyze-crypto-trades";
-import { fetchCoinData, type CoinMarketData } from "@/services/crypto-data-service";
+import { analyzeCryptoTrades, type AnalyzeCryptoTradesInput, type AnalyzeCryptoTradesOutput, type AICoinAnalysisInputData } from "@/ai/flows/analyze-crypto-trades";
+import { fetchCoinData, type CryptoCoinData } from "@/services/crypto-data-service";
 import TradewiseHeader from "@/components/TradewiseHeader";
 import CryptoDataTable from "@/components/CryptoDataTable";
 import FilterSortControls, {
@@ -18,8 +18,7 @@ import { AlertTriangle } from "lucide-react";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0];
 
-// Using CoinMarketCap symbols now
-const DEFAULT_COIN_LIST = "BTC,ETH,SOL,DOGE,ADA,DOT,LINK,MATIC,XRP,LTC"; // Example symbols
+const NUMBER_OF_COINS_TO_FETCH = 10; // Fetch top 10 coins
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 export default function TradeWisePage() {
@@ -29,36 +28,23 @@ export default function TradeWisePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  const [coinListInput, setCoinListInput] = useState(DEFAULT_COIN_LIST);
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
   const [sortKey, setSortKey] = useState<SortKey>("confidenceLevel");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
-  const fetchRecommendations = useCallback(async (coinSymbols: string, isManualRefresh: boolean = false) => {
-    if (!coinSymbols.trim()) {
-      setRecommendations([]);
-      setError("Please enter a list of coin symbols to analyze.");
-      if (isManualRefresh) {
-         toast({
-          title: "Input Error",
-          description: "Coin symbol list cannot be empty.",
-          variant: "destructive",
-        });
-      }
-      return;
-    }
+  const fetchRecommendations = useCallback(async (isManualRefresh: boolean = false) => {
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Fetch market data from CoinMarketCap
-      const marketData: CoinMarketData[] = await fetchCoinData(coinSymbols);
+      // 1. Fetch market data from CoinGecko (top N coins)
+      const marketData: CryptoCoinData[] = await fetchCoinData(NUMBER_OF_COINS_TO_FETCH);
 
       if (!marketData || marketData.length === 0) {
         setRecommendations([]);
-        setError("No market data found for the provided coin symbols. Please check the symbols and try again, or ensure your CoinMarketCap API key is correctly configured in the .env file.");
+        setError("No market data found from CoinGecko. The API might be temporarily unavailable or returned no data for top coins.");
         toast({
           title: "Market Data Error",
-          description: "Could not fetch market data for the given symbols.",
+          description: "Could not fetch market data from CoinGecko.",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -66,9 +52,8 @@ export default function TradeWisePage() {
       }
       
       // 2. Prepare input for AI analysis
-      // Map CoinMarketData to CoinDataInput (for AI flow)
-      const aiInputData: CoinDataInput[] = marketData.map(md => ({
-        id: md.id, // This is now the slug from CoinMarketCap
+      const aiInputData: AICoinAnalysisInputData[] = marketData.map(md => ({
+        id: md.id, 
         symbol: md.symbol,
         name: md.name,
         current_price: md.current_price,
@@ -83,7 +68,6 @@ export default function TradeWisePage() {
       const result = await analyzeCryptoTrades(input);
 
       if (result && result.tradingRecommendations) {
-        // Ensure currentPrice in recommendations matches the fetched market data
         const updatedRecommendations = result.tradingRecommendations.map(rec => {
           const matchedMarketData = marketData.find(md => md.symbol.toLowerCase() === rec.coin.toLowerCase());
           return {
@@ -96,7 +80,7 @@ export default function TradeWisePage() {
         if (isManualRefresh) {
           toast({
             title: "Analysis Complete",
-            description: `Found ${updatedRecommendations.length} recommendations.`,
+            description: `Found ${updatedRecommendations.length} recommendations for top ${NUMBER_OF_COINS_TO_FETCH} coins.`,
           });
         }
       } else {
@@ -126,21 +110,20 @@ export default function TradeWisePage() {
   }, [toast]);
 
   useEffect(() => {
-    fetchRecommendations(coinListInput); // Initial fetch
-    const intervalId = setInterval(() => fetchRecommendations(coinListInput), REFRESH_INTERVAL);
+    fetchRecommendations(); // Initial fetch
+    const intervalId = setInterval(() => fetchRecommendations(), REFRESH_INTERVAL);
     return () => clearInterval(intervalId);
-  }, [coinListInput, fetchRecommendations]);
+  }, [fetchRecommendations]);
 
   const handleAnalyzeCoins = () => {
-    fetchRecommendations(coinListInput, true);
+    fetchRecommendations(true); // Pass true for manual refresh
   };
   
   const handleResetFilters = () => {
     setConfidenceFilter("All");
     setSortKey("confidenceLevel");
     setSortDirection("desc");
-    setCoinListInput(DEFAULT_COIN_LIST);
-    fetchRecommendations(DEFAULT_COIN_LIST, true); 
+    fetchRecommendations(true); 
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
@@ -163,7 +146,7 @@ export default function TradeWisePage() {
           valB = b.coin;
           break;
         case "currentPrice":
-          valA = a.currentPrice ?? -Infinity; // Handle null prices
+          valA = a.currentPrice ?? -Infinity;
           valB = b.currentPrice ?? -Infinity;
           break;
         case "entryPrice":
@@ -211,13 +194,11 @@ export default function TradeWisePage() {
     <div className="flex flex-col min-h-screen bg-background">
       <TradewiseHeader
         lastUpdated={lastUpdated}
-        onRefresh={() => fetchRecommendations(coinListInput, true)}
+        onRefresh={() => fetchRecommendations(true)}
         isRefreshing={isLoading}
       />
       <main className="flex-grow container mx-auto px-4 md:px-8 py-8">
         <FilterSortControls
-          coinList={coinListInput}
-          setCoinList={setCoinListInput}
           confidenceFilter={confidenceFilter}
           setConfidenceFilter={setConfidenceFilter}
           sortKey={sortKey}
@@ -249,7 +230,7 @@ export default function TradeWisePage() {
         )}
       </main>
       <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border/50">
-        TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Data from CoinMarketCap.
+        TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Data from <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">CoinGecko</a>.
       </footer>
     </div>
   );

@@ -2,7 +2,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from 'react';
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input"; // No longer needed
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -12,15 +12,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Filter, ListRestart } from "lucide-react";
+import { BarChart, ListRestart, RefreshCw } from "lucide-react"; // Changed icon for analyze
 
 export type ConfidenceFilter = "All" | "High" | "Medium" | "Low";
 export type SortKey = "coin" | "currentPrice" | "entryPrice" | "exitPrice" | "signal" | "confidenceLevel";
 export type SortDirection = "asc" | "desc";
 
 interface FilterSortControlsProps {
-  coinList: string;
-  setCoinList: Dispatch<SetStateAction<string>>;
+  // coinList: string; // Removed
+  // setCoinList: Dispatch<SetStateAction<string>>; // Removed
   confidenceFilter: ConfidenceFilter;
   setConfidenceFilter: Dispatch<SetStateAction<ConfidenceFilter>>;
   sortKey: SortKey;
@@ -33,8 +33,8 @@ interface FilterSortControlsProps {
 }
 
 export default function FilterSortControls({
-  coinList,
-  setCoinList,
+  // coinList, // Removed
+  // setCoinList, // Removed
   confidenceFilter,
   setConfidenceFilter,
   sortKey,
@@ -48,17 +48,11 @@ export default function FilterSortControls({
   return (
     <div className="p-4 md:p-6 bg-card rounded-lg shadow mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
-        <div className="space-y-2">
-          <Label htmlFor="coinList">Coin Symbols (comma-separated)</Label>
-          <Input
-            id="coinList"
-            placeholder="e.g., BTC,ETH,SOL"
-            value={coinList}
-            onChange={(e) => setCoinList(e.target.value.toUpperCase())} // Store as uppercase for consistency with symbols
-            className="bg-background"
-          />
-           <p className="text-xs text-muted-foreground">
-            Enter standard cryptocurrency symbols (e.g., BTC, ETH, ADA).
+        {/* Coin input field removed */}
+        <div className="lg:col-span-1 md:col-span-2 space-y-2">
+          <p className="text-sm font-medium text-foreground">Analysis Scope</p>
+          <p className="text-xs text-muted-foreground">
+            Showing analysis for the top 10 cryptocurrencies by market cap from CoinGecko.
           </p>
         </div>
 
@@ -121,8 +115,9 @@ export default function FilterSortControls({
         <Button variant="outline" onClick={onResetFilters} disabled={isLoading}>
             <ListRestart className="mr-2 h-4 w-4" /> Reset Filters
         </Button>
-        <Button onClick={onAnalyze} disabled={isLoading || !coinList.trim()} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Filter className="mr-2 h-4 w-4" /> Analyze Coins
+        <Button onClick={onAnalyze} disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin': ''}`} /> 
+          {isLoading ? 'Analyzing...' : 'Refresh Analysis'}
         </Button>
       </div>
     </div>

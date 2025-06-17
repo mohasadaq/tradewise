@@ -13,9 +13,8 @@ import {ai} from '@/ai/genkit';
 import {z}from 'genkit';
 
 // Schema for individual coin data input to the AI
-// This schema remains largely the same, as page.tsx will map CoinMarketCap data to these fields.
-const CoinDataInputSchema = z.object({
-  id: z.string().describe("The unique identifier of the coin (e.g., bitcoin, ethereum). This is often the 'slug' from CoinMarketCap."),
+const AICoinAnalysisInputDataSchema = z.object({
+  id: z.string().describe("The unique identifier of the coin (e.g., bitcoin, ethereum). This is often the 'id' from CoinGecko."),
   symbol: z.string().describe("The ticker symbol of the coin (e.g., BTC, ETH)."),
   name: z.string().describe("The name of the coin (e.g., Bitcoin, Ethereum)."),
   current_price: z.number().nullable().describe("The current market price of the coin in USD."),
@@ -23,11 +22,11 @@ const CoinDataInputSchema = z.object({
   total_volume: z.number().nullable().describe("The total trading volume in the last 24 hours in USD."),
   price_change_percentage_24h: z.number().nullable().describe("The price change percentage in the last 24 hours."),
 });
-export type CoinDataInput = z.infer<typeof CoinDataInputSchema>;
+export type AICoinAnalysisInputData = z.infer<typeof AICoinAnalysisInputDataSchema>;
 
 
 const AnalyzeCryptoTradesInputSchema = z.object({
-  coinsData: z.array(CoinDataInputSchema).describe("An array of objects, each containing market data for a specific cryptocurrency fetched from an external API like CoinMarketCap."),
+  coinsData: z.array(AICoinAnalysisInputDataSchema).describe("An array of objects, each containing market data for a specific cryptocurrency fetched from an external API like CoinGecko."),
 });
 export type AnalyzeCryptoTradesInput = z.infer<typeof AnalyzeCryptoTradesInputSchema>;
 
