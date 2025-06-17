@@ -51,7 +51,8 @@ export default function FilterSortControls({
         <div className="lg:col-span-1 sm:col-span-2 space-y-1">
           <p className="text-sm font-medium text-foreground">Analysis Scope</p>
           <p className="text-xs text-muted-foreground">
-            Enter coin symbols (e.g. btc,eth) for specific analysis, or leave blank for default top coins (stablecoins excluded).
+            Enter coin symbols (e.g. btc,eth) for specific analysis.
+            Leave blank to analyze top coins by market cap. Stablecoins are excluded.
           </p>
         </div>
         
