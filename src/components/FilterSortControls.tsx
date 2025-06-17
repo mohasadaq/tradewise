@@ -126,10 +126,10 @@ export default function FilterSortControls({
         </div>
       </div>
       <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-        <Button variant="outline" onClick={onResetFilters} disabled={isLoading} className="h-9 sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
+        <Button variant="outline" onClick={onResetFilters} disabled={isLoading} className="w-full sm:w-auto h-9 sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
             <ListRestart className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Reset & Show Top
         </Button>
-        <Button onClick={onAnalyze} disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
+        <Button onClick={onAnalyze} disabled={isLoading} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground h-9 sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
           <RefreshCw className={`mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4 ${isLoading ? 'animate-spin': ''}`} />
           {isLoading ? 'Analyzing...' : (searchQuery.trim() ? 'Analyze Symbols' : 'Analyze Top Coins')}
         </Button>
