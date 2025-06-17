@@ -12,15 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { BarChart, ListRestart, RefreshCw } from "lucide-react"; // Changed icon for analyze
+import { ListRestart, RefreshCw } from "lucide-react"; 
 
 export type ConfidenceFilter = "All" | "High" | "Medium" | "Low";
 export type SortKey = "coin" | "currentPrice" | "entryPrice" | "exitPrice" | "signal" | "confidenceLevel";
 export type SortDirection = "asc" | "desc";
 
 interface FilterSortControlsProps {
-  // coinList: string; // Removed
-  // setCoinList: Dispatch<SetStateAction<string>>; // Removed
   confidenceFilter: ConfidenceFilter;
   setConfidenceFilter: Dispatch<SetStateAction<ConfidenceFilter>>;
   sortKey: SortKey;
@@ -33,8 +31,6 @@ interface FilterSortControlsProps {
 }
 
 export default function FilterSortControls({
-  // coinList, // Removed
-  // setCoinList, // Removed
   confidenceFilter,
   setConfidenceFilter,
   sortKey,
@@ -48,11 +44,10 @@ export default function FilterSortControls({
   return (
     <div className="p-4 md:p-6 bg-card rounded-lg shadow mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
-        {/* Coin input field removed */}
         <div className="lg:col-span-1 md:col-span-2 space-y-2">
           <p className="text-sm font-medium text-foreground">Analysis Scope</p>
           <p className="text-xs text-muted-foreground">
-            Showing analysis for the top 10 cryptocurrencies by market cap from CoinGecko.
+            Showing analysis for the top 5 cryptocurrencies by market cap from CoinGecko.
           </p>
         </div>
 
