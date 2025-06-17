@@ -13,10 +13,11 @@ import {ai} from '@/ai/genkit';
 import {z}from 'genkit';
 
 // Schema for individual coin data input to the AI
+// This schema remains largely the same, as page.tsx will map CoinMarketCap data to these fields.
 const CoinDataInputSchema = z.object({
-  id: z.string().describe("The CoinGecko ID of the coin (e.g., bitcoin)."),
-  symbol: z.string().describe("The ticker symbol of the coin (e.g., btc)."),
-  name: z.string().describe("The name of the coin (e.g., Bitcoin)."),
+  id: z.string().describe("The unique identifier of the coin (e.g., bitcoin, ethereum). This is often the 'slug' from CoinMarketCap."),
+  symbol: z.string().describe("The ticker symbol of the coin (e.g., BTC, ETH)."),
+  name: z.string().describe("The name of the coin (e.g., Bitcoin, Ethereum)."),
   current_price: z.number().nullable().describe("The current market price of the coin in USD."),
   market_cap: z.number().nullable().describe("The market capitalization of the coin in USD."),
   total_volume: z.number().nullable().describe("The total trading volume in the last 24 hours in USD."),
@@ -26,14 +27,14 @@ export type CoinDataInput = z.infer<typeof CoinDataInputSchema>;
 
 
 const AnalyzeCryptoTradesInputSchema = z.object({
-  coinsData: z.array(CoinDataInputSchema).describe("An array of objects, each containing market data for a specific cryptocurrency fetched from CoinGecko."),
+  coinsData: z.array(CoinDataInputSchema).describe("An array of objects, each containing market data for a specific cryptocurrency fetched from an external API like CoinMarketCap."),
 });
 export type AnalyzeCryptoTradesInput = z.infer<typeof AnalyzeCryptoTradesInputSchema>;
 
 const AnalyzeCryptoTradesOutputSchema = z.object({
   tradingRecommendations: z.array(
     z.object({
-      coin: z.string().describe('The ticker symbol of the recommended coin (e.g., btc, eth). This should match the input symbol.'),
+      coin: z.string().describe('The ticker symbol of the recommended coin (e.g., BTC, ETH). This should match the input symbol.'),
       currentPrice: z.number().nullable().describe('The current market price of the coin, taken from the input data.'),
       entryPrice: z.number().nullable().describe('The recommended entry price for the coin.'),
       exitPrice: z.number().nullable().describe('The recommended exit price for the coin.'),
@@ -68,7 +69,7 @@ Do not attempt to fetch external data; use only the data provided below for curr
 Analyze the following coins:
 {{#each coinsData}}
 Coin Details:
-- ID: {{{id}}}
+- ID (Slug): {{{id}}}
 - Symbol: {{{symbol}}}
 - Name: {{{name}}}
 - Current Price (USD): {{#if current_price}}{{current_price}}{{else}}N/A{{/if}}
@@ -79,7 +80,7 @@ Coin Details:
 {{/each}}
 
 For each coin, provide:
-1.  'coin': The ticker symbol (e.g., btc, eth). This MUST match the 'symbol' from the input for that coin.
+1.  'coin': The ticker symbol (e.g., BTC, ETH). This MUST match the 'symbol' from the input for that coin.
 2.  'currentPrice': The current market price provided in the input.
 3.  'entryPrice': Your recommended entry price.
 4.  'exitPrice': Your recommended exit price.
@@ -101,7 +102,6 @@ const analyzeCryptoTradesFlow = ai.defineFlow(
     outputSchema: AnalyzeCryptoTradesOutputSchema,
   },
   async (input: AnalyzeCryptoTradesInput) => {
-    // Ensure there's data to process
     if (!input.coinsData || input.coinsData.length === 0) {
       return { tradingRecommendations: [] };
     }

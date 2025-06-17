@@ -49,16 +49,16 @@ export default function FilterSortControls({
     <div className="p-4 md:p-6 bg-card rounded-lg shadow mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
         <div className="space-y-2">
-          <Label htmlFor="coinList">CoinGecko IDs (comma-separated)</Label>
+          <Label htmlFor="coinList">Coin Symbols (comma-separated)</Label>
           <Input
             id="coinList"
-            placeholder="e.g., bitcoin,ethereum,solana"
+            placeholder="e.g., BTC,ETH,SOL"
             value={coinList}
-            onChange={(e) => setCoinList(e.target.value.toLowerCase())} // Store as lowercase for consistency
+            onChange={(e) => setCoinList(e.target.value.toUpperCase())} // Store as uppercase for consistency with symbols
             className="bg-background"
           />
            <p className="text-xs text-muted-foreground">
-            Find IDs on <a href="https://www.coingecko.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">CoinGecko</a> (e.g., 'bitcoin', not 'BTC').
+            Enter standard cryptocurrency symbols (e.g., BTC, ETH, ADA).
           </p>
         </div>
 

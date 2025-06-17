@@ -18,8 +18,8 @@ import { AlertTriangle } from "lucide-react";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0];
 
-// Using CoinGecko IDs now
-const DEFAULT_COIN_LIST = "bitcoin,ethereum,solana,dogecoin,cardano,polkadot,chainlink,matic-network,ripple,litecoin";
+// Using CoinMarketCap symbols now
+const DEFAULT_COIN_LIST = "BTC,ETH,SOL,DOGE,ADA,DOT,LINK,MATIC,XRP,LTC"; // Example symbols
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 export default function TradeWisePage() {
@@ -34,14 +34,14 @@ export default function TradeWisePage() {
   const [sortKey, setSortKey] = useState<SortKey>("confidenceLevel");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
-  const fetchRecommendations = useCallback(async (coinGeckoIds: string, isManualRefresh: boolean = false) => {
-    if (!coinGeckoIds.trim()) {
+  const fetchRecommendations = useCallback(async (coinSymbols: string, isManualRefresh: boolean = false) => {
+    if (!coinSymbols.trim()) {
       setRecommendations([]);
-      setError("Please enter a list of CoinGecko IDs to analyze.");
+      setError("Please enter a list of coin symbols to analyze.");
       if (isManualRefresh) {
          toast({
           title: "Input Error",
-          description: "CoinGecko ID list cannot be empty.",
+          description: "Coin symbol list cannot be empty.",
           variant: "destructive",
         });
       }
@@ -50,15 +50,15 @@ export default function TradeWisePage() {
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Fetch market data from CoinGecko
-      const marketData: CoinMarketData[] = await fetchCoinData(coinGeckoIds);
+      // 1. Fetch market data from CoinMarketCap
+      const marketData: CoinMarketData[] = await fetchCoinData(coinSymbols);
 
       if (!marketData || marketData.length === 0) {
         setRecommendations([]);
-        setError("No market data found for the provided CoinGecko IDs. Please check the IDs and try again.");
+        setError("No market data found for the provided coin symbols. Please check the symbols and try again, or ensure your CoinMarketCap API key is correctly configured in the .env file.");
         toast({
           title: "Market Data Error",
-          description: "Could not fetch market data for the given IDs.",
+          description: "Could not fetch market data for the given symbols.",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -66,8 +66,9 @@ export default function TradeWisePage() {
       }
       
       // 2. Prepare input for AI analysis
+      // Map CoinMarketData to CoinDataInput (for AI flow)
       const aiInputData: CoinDataInput[] = marketData.map(md => ({
-        id: md.id,
+        id: md.id, // This is now the slug from CoinMarketCap
         symbol: md.symbol,
         name: md.name,
         current_price: md.current_price,
@@ -248,7 +249,7 @@ export default function TradeWisePage() {
         )}
       </main>
       <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border/50">
-        TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Data from CoinGecko.
+        TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Data from CoinMarketCap.
       </footer>
     </div>
   );
