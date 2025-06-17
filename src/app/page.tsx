@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { analyzeCryptoTrades, type AnalyzeCryptoTradesInput, type AnalyzeCryptoTradesOutput, type AICoinAnalysisInputData } from "@/ai/flows/analyze-crypto-trades";
+import { analyzeCryptoTrades, type AnalyzeCryptoTradesOutput, type AICoinAnalysisInputData } from "@/ai/flows/analyze-crypto-trades";
 import { fetchCoinData, type CryptoCoinData } from "@/services/crypto-data-service";
 import TradewiseHeader from "@/components/TradewiseHeader";
 import CryptoDataTable from "@/components/CryptoDataTable";
@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
-type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0];
+type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { coinName: string };
 
 const NUMBER_OF_COINS_TO_FETCH = 5; // Fetch top 5 coins
 const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
@@ -28,6 +28,7 @@ export default function TradeWisePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
+  const [searchQuery, setSearchQuery] = useState("");
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
   const [sortKey, setSortKey] = useState<SortKey>("confidenceLevel");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -62,17 +63,20 @@ export default function TradeWisePage() {
         price_change_percentage_24h: md.price_change_percentage_24h,
       }));
 
-      const input: AnalyzeCryptoTradesInput = { coinsData: aiInputData };
+      const input = { coinsData: aiInputData };
       
       // 3. Call AI for analysis
       const result = await analyzeCryptoTrades(input);
 
       if (result && result.tradingRecommendations) {
-        const updatedRecommendations = result.tradingRecommendations.map(rec => {
-          const matchedMarketData = marketData.find(md => md.symbol.toLowerCase() === rec.coin.toLowerCase());
+        const updatedRecommendations: TradingRecommendation[] = result.tradingRecommendations.map(rec => {
+          const matchedMarketData = marketData.find(
+            md => md.symbol.toLowerCase() === rec.coin.toLowerCase() || md.name.toLowerCase() === rec.coinName.toLowerCase()
+          );
           return {
             ...rec,
             currentPrice: matchedMarketData?.current_price ?? rec.currentPrice,
+            coinName: matchedMarketData?.name ?? rec.coinName, // Ensure coinName is populated
           };
         });
         setRecommendations(updatedRecommendations);
@@ -120,21 +124,36 @@ export default function TradeWisePage() {
   };
   
   const handleResetFilters = () => {
+    setSearchQuery("");
     setConfidenceFilter("All");
     setSortKey("confidenceLevel");
     setSortDirection("desc");
-    fetchRecommendations(true); 
+    // No need to call fetchRecommendations(true) here if we want reset to only apply to filters
+    // If we want reset to also re-fetch, then uncomment the line below
+    // fetchRecommendations(true); 
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
     let filtered = [...recommendations];
 
+    // Apply search query first
+    if (searchQuery.trim() !== "") {
+      const lowercasedQuery = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (rec) =>
+          rec.coin.toLowerCase().includes(lowercasedQuery) ||
+          rec.coinName.toLowerCase().includes(lowercasedQuery)
+      );
+    }
+    
+    // Then apply confidence filter
     if (confidenceFilter !== "All") {
       filtered = filtered.filter(
         (rec) => rec.confidenceLevel.toLowerCase() === confidenceFilter.toLowerCase()
       );
     }
 
+    // Then sort
     const confidenceOrder: { [key: string]: number } = { high: 0, medium: 1, low: 2 };
     const signalOrder: { [key: string]: number } = { buy: 0, hold: 1, sell: 2 };
 
@@ -142,8 +161,8 @@ export default function TradeWisePage() {
       let valA, valB;
       switch (sortKey) {
         case "coin":
-          valA = a.coin;
-          valB = b.coin;
+          valA = a.coinName; // Sort by full name for better UX, but display symbol
+          valB = b.coinName;
           break;
         case "currentPrice":
           valA = a.currentPrice ?? -Infinity;
@@ -179,7 +198,7 @@ export default function TradeWisePage() {
     });
 
     return filtered;
-  }, [recommendations, confidenceFilter, sortKey, sortDirection]);
+  }, [recommendations, searchQuery, confidenceFilter, sortKey, sortDirection]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -199,6 +218,8 @@ export default function TradeWisePage() {
       />
       <main className="flex-grow container mx-auto px-4 md:px-8 py-8">
         <FilterSortControls
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
           confidenceFilter={confidenceFilter}
           setConfidenceFilter={setConfidenceFilter}
           sortKey={sortKey}

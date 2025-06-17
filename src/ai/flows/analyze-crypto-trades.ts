@@ -34,6 +34,7 @@ const AnalyzeCryptoTradesOutputSchema = z.object({
   tradingRecommendations: z.array(
     z.object({
       coin: z.string().describe('The ticker symbol of the recommended coin (e.g., BTC, ETH). This should match the input symbol.'),
+      coinName: z.string().describe('The full name of the coin (e.g., Bitcoin, Ethereum). This should match the input name.'),
       currentPrice: z.number().nullable().describe('The current market price of the coin, taken from the input data.'),
       entryPrice: z.number().nullable().describe('The recommended entry price for the coin.'),
       exitPrice: z.number().nullable().describe('The recommended exit price for the coin.'),
@@ -80,17 +81,18 @@ Coin Details:
 
 For each coin, provide:
 1.  'coin': The ticker symbol (e.g., BTC, ETH). This MUST match the 'symbol' from the input for that coin.
-2.  'currentPrice': The current market price provided in the input.
-3.  'entryPrice': Your recommended entry price.
-4.  'exitPrice': Your recommended exit price.
-5.  'signal': A clear trading signal: "Buy", "Sell", or "Hold".
-6.  'confidenceLevel': Your confidence in this recommendation: "High", "Medium", or "Low".
-7.  'technicalIndicators': A list of 3-5 key technical indicators or chart patterns that support your recommendation.
-8.  'orderBookAnalysis': A brief summary of inferred order book dynamics or market sentiment based on the provided data and general market knowledge (e.g., "Strong buying pressure indicated by volume spikes," or "Market appears cautious, awaiting catalyst").
+2.  'coinName': The full name of the coin (e.g., Bitcoin, Ethereum). This MUST match the 'name' from the input for that coin.
+3.  'currentPrice': The current market price provided in the input.
+4.  'entryPrice': Your recommended entry price.
+5.  'exitPrice': Your recommended exit price.
+6.  'signal': A clear trading signal: "Buy", "Sell", or "Hold".
+7.  'confidenceLevel': Your confidence in this recommendation: "High", "Medium", or "Low".
+8.  'technicalIndicators': A list of 3-5 key technical indicators or chart patterns that support your recommendation.
+9.  'orderBookAnalysis': A brief summary of inferred order book dynamics or market sentiment based on the provided data and general market knowledge (e.g., "Strong buying pressure indicated by volume spikes," or "Market appears cautious, awaiting catalyst").
 
 Format your entire response as a single JSON object matching the output schema, containing a 'tradingRecommendations' array. Each object in the array must pertain to one of the analyzed coins.
 Ensure all fields in the output schema are populated. If a value cannot be determined, use null where appropriate for number fields, or a descriptive string like "N/A" for string fields if absolutely necessary (though strive for concrete analysis).
-Double-check that the 'coin' symbol in your output exactly matches the 'symbol' provided in the input for each respective coin.
+Double-check that the 'coin' symbol and 'coinName' in your output exactly match the 'symbol' and 'name' provided in the input for each respective coin.
 `,
 });
 
@@ -109,15 +111,19 @@ const analyzeCryptoTradesFlow = ai.defineFlow(
         console.error("AI analysis returned no output.");
         return { tradingRecommendations: [] };
     }
-    // Ensure the output structure is as expected, especially currentPrice
+    // Ensure the output structure is as expected, especially currentPrice and coinName
     const validatedRecommendations = output.tradingRecommendations.map(rec => {
-        const originalCoinData = input.coinsData.find(cd => cd.symbol.toLowerCase() === rec.coin.toLowerCase());
+        const originalCoinData = input.coinsData.find(
+          cd => cd.symbol.toLowerCase() === rec.coin.toLowerCase() || cd.name.toLowerCase() === rec.coinName.toLowerCase()
+        );
         return {
             ...rec,
-            currentPrice: originalCoinData?.current_price ?? rec.currentPrice ?? null, // Prioritize input current_price
+            currentPrice: originalCoinData?.current_price ?? rec.currentPrice ?? null,
+            coinName: originalCoinData?.name ?? rec.coinName, // Prioritize input name
         };
     });
 
     return { tradingRecommendations: validatedRecommendations };
   }
 );
+
