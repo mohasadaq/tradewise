@@ -3,6 +3,7 @@
 
 /**
  * @fileOverview Analyzes crypto coins using technical analysis and provided market data to recommend coins for trading, including entry and exit prices, and a trading signal.
+ * Considers a specific time frame for price change analysis.
  *
  * - analyzeCryptoTrades - A function that analyzes crypto coins and provides trading recommendations.
  * - AnalyzeCryptoTradesInput - The input type for the analyzeCryptoTrades function.
@@ -20,13 +21,14 @@ const AICoinAnalysisInputDataSchema = z.object({
   current_price: z.number().nullable().describe("The current market price of the coin in USD."),
   market_cap: z.number().nullable().describe("The market capitalization of the coin in USD."),
   total_volume: z.number().nullable().describe("The total trading volume in the last 24 hours in USD."),
-  price_change_percentage_24h: z.number().nullable().describe("The price change percentage in the last 24 hours."),
+  price_change_percentage_in_selected_timeframe: z.number().nullable().describe("The price change percentage for the selected time frame (e.g., if '7d' was selected, this is the 7-day price change percentage)."),
+  selected_time_frame: z.string().describe("The time frame for which the 'price_change_percentage_in_selected_timeframe' is reported (e.g., '1h', '24h', '7d', '30d')."),
 });
 export type AICoinAnalysisInputData = z.infer<typeof AICoinAnalysisInputDataSchema>;
 
 
 const AnalyzeCryptoTradesInputSchema = z.object({
-  coinsData: z.array(AICoinAnalysisInputDataSchema).describe("An array of objects, each containing market data for a specific cryptocurrency fetched from an external API like CoinGecko."),
+  coinsData: z.array(AICoinAnalysisInputDataSchema).describe("An array of objects, each containing market data for a specific cryptocurrency fetched from an external API like CoinGecko, tailored to a selected time frame."),
 });
 export type AnalyzeCryptoTradesInput = z.infer<typeof AnalyzeCryptoTradesInputSchema>;
 
@@ -44,7 +46,7 @@ const AnalyzeCryptoTradesOutputSchema = z.object({
         .describe('The confidence level of the recommendation (High, Medium, Low).'),
       technicalIndicators: z
         .array(z.string())
-        .describe('Key technical indicators supporting the recommendation (e.g., RSI, MACD crossover, Bollinger Bands).'),
+        .describe('Key technical indicators supporting the recommendation (e.g., RSI, MACD crossover, Bollinger Bands). These should consider the selected_time_frame.'),
       orderBookAnalysis: z.string().describe('Summary of inferred order book analysis or market sentiment.'),
     })
   ).describe('A list of trading recommendations for the specified crypto coins.'),
@@ -62,8 +64,8 @@ const analyzeCryptoTradesPrompt = ai.definePrompt({
   name: 'analyzeCryptoTradesPrompt',
   input: {schema: AnalyzeCryptoTradesInputSchema},
   output: {schema: AnalyzeCryptoTradesOutputSchema},
-  prompt: `You are an expert AI crypto trading analyst. You have been provided with real-time market data for several cryptocurrencies.
-Your task is to analyze each coin based on this provided data and your knowledge of technical analysis (e.g., RSI, MACD, Bollinger Bands, support/resistance levels) and market sentiment.
+  prompt: `You are an expert AI crypto trading analyst. You have been provided with real-time market data for several cryptocurrencies, including price change percentage for a specific time frame.
+Your task is to analyze each coin based on this provided data and your knowledge of technical analysis (e.g., RSI, MACD, Bollinger Bands, support/resistance levels) and market sentiment, paying close attention to the 'selected_time_frame' for the price change data.
 Do not attempt to fetch external data; use only the data provided below for current prices and market stats.
 
 Analyze the following coins:
@@ -75,7 +77,8 @@ Coin Details:
 - Current Price (USD): {{#if current_price}}{{current_price}}{{else}}N/A{{/if}}
 - Market Cap (USD): {{#if market_cap}}{{market_cap}}{{else}}N/A{{/if}}
 - 24h Volume (USD): {{#if total_volume}}{{total_volume}}{{else}}N/A{{/if}}
-- 24h Price Change (%): {{#if price_change_percentage_24h}}{{price_change_percentage_24h}}%{{else}}N/A{{/if}}
+- Price Change ({{selected_time_frame}}) (%): {{#if price_change_percentage_in_selected_timeframe}}{{price_change_percentage_in_selected_timeframe}}%{{else}}N/A{{/if}}
+- Analysis Time Frame: {{{selected_time_frame}}}
 ---
 {{/each}}
 
@@ -87,8 +90,8 @@ For each coin, provide:
 5.  'exitPrice': Your recommended exit price.
 6.  'signal': A clear trading signal: "Buy", "Sell", or "Hold".
 7.  'confidenceLevel': Your confidence in this recommendation: "High", "Medium", or "Low".
-8.  'technicalIndicators': A list of 3-5 key technical indicators or chart patterns that support your recommendation.
-9.  'orderBookAnalysis': A brief summary of inferred order book dynamics or market sentiment based on the provided data and general market knowledge (e.g., "Strong buying pressure indicated by volume spikes," or "Market appears cautious, awaiting catalyst").
+8.  'technicalIndicators': A list of 3-5 key technical indicators or chart patterns that support your recommendation. Ensure these indicators are relevant to the 'selected_time_frame' context if applicable.
+9.  'orderBookAnalysis': A brief summary of inferred order book dynamics or market sentiment based on the provided data and general market knowledge.
 
 Format your entire response as a single JSON object matching the output schema, containing a 'tradingRecommendations' array. Each object in the array must pertain to one of the analyzed coins.
 Ensure all fields in the output schema are populated. If a value cannot be determined, use null where appropriate for number fields, or a descriptive string like "N/A" for string fields if absolutely necessary (though strive for concrete analysis).
@@ -126,4 +129,3 @@ const analyzeCryptoTradesFlow = ai.defineFlow(
     return { tradingRecommendations: validatedRecommendations };
   }
 );
-

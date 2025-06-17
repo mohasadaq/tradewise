@@ -10,6 +10,7 @@ import FilterSortControls, {
   type ConfidenceFilter,
   type SortKey,
   type SortDirection,
+  type TimeFrame,
 } from "@/components/FilterSortControls";
 import SkeletonTable from "@/components/SkeletonTable";
 import { useToast } from "@/hooks/use-toast";
@@ -20,9 +21,10 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
 const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const DEFAULT_TIME_FRAME: TimeFrame = "24h";
 
 const STABLECOIN_SYMBOLS: string[] = [
-  'usdt', 'usdc', 'busd', 'dai', 'tusd', 'usdp', 'gusd', 'fdusd', 'usdd', 'frax', 'lusd', 'pax'
+  'usdt', 'usdc', 'busd', 'dai', 'tusd', 'usdp', 'gusd', 'fdusd', 'usdd', 'frax', 'lusd', 'pax', 'eurc', 'usde'
 ];
 
 function isStablecoin(symbol: string): boolean {
@@ -40,28 +42,34 @@ export default function TradeWisePage() {
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
   const [sortKey, setSortKey] = useState<SortKey>("confidenceLevel");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>(DEFAULT_TIME_FRAME);
 
-  const performAnalysis = useCallback(async (coinSymbolsToFetch?: string, isAutoRefresh: boolean = false) => {
+  const performAnalysis = useCallback(async (symbolsToFetch?: string, timeFrameToUse?: TimeFrame, isAutoRefresh: boolean = false) => {
     setIsLoading(true);
     setError(null);
     let fetchToastId: string | null = null;
 
-    const isSearchingSpecificSymbols = coinSymbolsToFetch && coinSymbolsToFetch.trim() !== "";
-    const analysisTargetDescription = isSearchingSpecificSymbols ? `symbols: ${coinSymbolsToFetch}` : `top ${NUMBER_OF_COINS_TO_FETCH_DEFAULT} coins`;
+    const currentSymbols = symbolsToFetch?.trim() || "";
+    const currentTimeFrame = timeFrameToUse || selectedTimeFrame;
+
+    const isSearchingSpecificSymbols = currentSymbols !== "";
+    const analysisTargetDescription = isSearchingSpecificSymbols ? `symbols: ${currentSymbols}` : `top ${NUMBER_OF_COINS_TO_FETCH_DEFAULT} coins`;
+    const timeFrameDescription = `(${currentTimeFrame} view)`;
 
     if (!isAutoRefresh) {
-       fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing ${analysisTargetDescription}.`}).id;
+       fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing ${analysisTargetDescription} ${timeFrameDescription}.`}).id;
     }
 
     try {
       const marketData: CryptoCoinData[] = await fetchCoinData(
         NUMBER_OF_COINS_TO_FETCH_DEFAULT,
-        coinSymbolsToFetch
+        currentSymbols,
+        currentTimeFrame
       );
 
       if (!marketData || marketData.length === 0) {
         setRecommendations([]);
-        const message = isSearchingSpecificSymbols ? `No market data found for the specified symbols: ${coinSymbolsToFetch}. Please check the symbols and try again.` : `No market data found from CoinGecko for top coins.`;
+        const message = isSearchingSpecificSymbols ? `No market data found for symbols: ${currentSymbols} (${currentTimeFrame} view). Please check symbols/timeframe.` : `No market data found for top coins (${currentTimeFrame} view).`;
         setError(message);
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Market Data Error", description: message, variant: "destructive" });
@@ -72,11 +80,11 @@ export default function TradeWisePage() {
         return;
       }
 
-      const nonStableMarketData = marketData.filter(coin => !isStablecoin(coin.symbol));
+      const nonStableMarketData = marketData.filter(coin => !isStablecoin(coin.symbol.toLowerCase()));
 
       if (nonStableMarketData.length === 0) {
         setRecommendations([]);
-        const message = isSearchingSpecificSymbols ? `No non-stablecoin market data found for analysis among the specified symbols: ${coinSymbolsToFetch}.` : "No non-stablecoins found for analysis among the top fetched coins.";
+        const message = isSearchingSpecificSymbols ? `No non-stablecoin market data found for symbols: ${currentSymbols} (${currentTimeFrame} view).` : `No non-stablecoins found for analysis among top coins (${currentTimeFrame} view).`;
         setError(message);
         if (fetchToastId) {
           toast({id: fetchToastId, title: "No Coins for Analysis", description: message, variant: "destructive" });
@@ -88,7 +96,7 @@ export default function TradeWisePage() {
       }
       
       if (fetchToastId) {
-        toast({id: fetchToastId, title: "Market Data Fetched", description: `Found ${nonStableMarketData.length} non-stablecoin(s). Starting AI analysis...`});
+        toast({id: fetchToastId, title: "Market Data Fetched", description: `Found ${nonStableMarketData.length} non-stablecoin(s). Starting AI analysis ${timeFrameDescription}...`});
       }
 
       const aiInputData: AICoinAnalysisInputData[] = nonStableMarketData.map(md => ({
@@ -98,7 +106,8 @@ export default function TradeWisePage() {
         current_price: md.current_price,
         market_cap: md.market_cap,
         total_volume: md.total_volume,
-        price_change_percentage_24h: md.price_change_percentage_24h,
+        price_change_percentage_in_selected_timeframe: md.price_change_percentage_selected_timeframe,
+        selected_time_frame: currentTimeFrame,
       }));
 
       const input = { coinsData: aiInputData };
@@ -107,7 +116,7 @@ export default function TradeWisePage() {
 
       if (result && result.tradingRecommendations) {
         const updatedRecommendations: TradingRecommendation[] = result.tradingRecommendations.map(rec => {
-          const matchedMarketData = nonStableMarketData.find( // Match against nonStableMarketData
+          const matchedMarketData = nonStableMarketData.find(
              md => md.symbol.toLowerCase() === rec.coin.toLowerCase() || md.name.toLowerCase() === rec.coinName.toLowerCase()
           );
           return {
@@ -118,7 +127,7 @@ export default function TradeWisePage() {
         });
         setRecommendations(updatedRecommendations);
         setLastUpdated(new Date());
-        const successMessage = `Found ${updatedRecommendations.length} recommendations for ${nonStableMarketData.length} non-stablecoin(s) from ${analysisTargetDescription}.`;
+        const successMessage = `Found ${updatedRecommendations.length} recommendations for ${nonStableMarketData.length} non-stablecoin(s) from ${analysisTargetDescription} ${timeFrameDescription}.`;
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Analysis Complete", description: successMessage });
         } else if (!isAutoRefresh) {
@@ -126,8 +135,8 @@ export default function TradeWisePage() {
         }
       } else {
         setRecommendations([]);
-        setError("No recommendations found or unexpected response from AI.");
-        const issueMessage = "No recommendations found or unexpected AI response.";
+        setError(`No recommendations found or unexpected response from AI for ${analysisTargetDescription} ${timeFrameDescription}.`);
+        const issueMessage = `No recommendations or unexpected AI response for ${analysisTargetDescription} ${timeFrameDescription}.`;
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Analysis Issue", description: issueMessage, variant: "destructive" });
         } else if (!isAutoRefresh) {
@@ -137,7 +146,7 @@ export default function TradeWisePage() {
     } catch (err) {
       console.error("Error performing analysis:", err);
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-      setError(`Analysis failed: ${errorMessage}`);
+      setError(`Analysis failed for ${analysisTargetDescription} ${timeFrameDescription}: ${errorMessage}`);
       setRecommendations([]);
        if (fetchToastId) {
             toast({id: fetchToastId, title: "Analysis Failed", description: `Error: ${errorMessage}`, variant: "destructive" });
@@ -147,20 +156,22 @@ export default function TradeWisePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, selectedTimeFrame]); // Added selectedTimeFrame to dependencies for auto-refresh
 
   useEffect(() => {
-    performAnalysis(undefined, true);
+    // Initial load with default symbols (empty) and default time frame
+    performAnalysis(undefined, DEFAULT_TIME_FRAME, true); 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Empty dependency array, performAnalysis is memoized
 
   useEffect(() => {
-    const intervalId = setInterval(() => performAnalysis(undefined, true), REFRESH_INTERVAL);
+    // Auto-refresh interval
+    const intervalId = setInterval(() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame, true), REFRESH_INTERVAL);
     return () => clearInterval(intervalId);
-  }, [performAnalysis]);
+  }, [performAnalysis, searchQuery, selectedTimeFrame]); // searchQuery & selectedTimeFrame for auto-refresh with current settings
 
   const handleAnalyzeCoins = () => {
-    performAnalysis(searchQuery.trim() || undefined);
+    performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame);
   };
   
   const handleResetFilters = () => {
@@ -168,7 +179,8 @@ export default function TradeWisePage() {
     setConfidenceFilter("All");
     setSortKey("confidenceLevel");
     setSortDirection("desc");
-    performAnalysis(undefined);
+    setSelectedTimeFrame(DEFAULT_TIME_FRAME);
+    performAnalysis(undefined, DEFAULT_TIME_FRAME); // Reset to top coins with default time frame
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
@@ -239,7 +251,7 @@ export default function TradeWisePage() {
     <div className="flex flex-col min-h-screen bg-background">
       <TradewiseHeader
         lastUpdated={lastUpdated}
-        onRefresh={() => performAnalysis(searchQuery.trim() || undefined)}
+        onRefresh={() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame)}
         isRefreshing={isLoading}
       />
       <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-8 py-4 sm:py-8">
@@ -252,6 +264,8 @@ export default function TradeWisePage() {
           setSortKey={setSortKey}
           sortDirection={sortDirection}
           setSortDirection={setSortDirection}
+          selectedTimeFrame={selectedTimeFrame}
+          setSelectedTimeFrame={setSelectedTimeFrame}
           onAnalyze={handleAnalyzeCoins}
           isLoading={isLoading}
           onResetFilters={handleResetFilters}

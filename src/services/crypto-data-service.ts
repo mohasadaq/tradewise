@@ -15,10 +15,11 @@ const CoinListItemSchema = z.object({
 type CoinListItem = z.infer<typeof CoinListItemSchema>;
 
 // Schema for individual coin data from CoinGecko's /coins/markets endpoint
+// This schema needs to be flexible for dynamic price_change_percentage fields
 const CoinGeckoMarketCoinSchema = z.object({
-  id: z.string(), // e.g., "bitcoin"
-  symbol: z.string(), // e.g., "btc"
-  name: z.string(), // e.g., "Bitcoin"
+  id: z.string(),
+  symbol: z.string(),
+  name: z.string(),
   image: z.string().url().optional(),
   current_price: z.number().nullable(),
   market_cap: z.number().nullable(),
@@ -28,7 +29,7 @@ const CoinGeckoMarketCoinSchema = z.object({
   high_24h: z.number().nullable(),
   low_24h: z.number().nullable(),
   price_change_24h: z.number().nullable(),
-  price_change_percentage_24h: z.number().nullable(),
+  // price_change_percentage_24h: z.number().nullable(), // This will be handled dynamically
   market_cap_change_24h: z.number().nullable(),
   market_cap_change_percentage_24h: z.number().nullable(),
   circulating_supply: z.number().nullable(),
@@ -46,7 +47,8 @@ const CoinGeckoMarketCoinSchema = z.object({
     percentage: z.number(),
   }).nullable(),
   last_updated: z.string().datetime({ offset: true }).nullable(),
-});
+}).catchall(z.any()); // Allows other properties like price_change_percentage_Xh_in_currency
+
 
 // This is the structure we'll return from our service function.
 const ProcessedCoinDataSchema = z.object({
@@ -56,28 +58,30 @@ const ProcessedCoinDataSchema = z.object({
   current_price: z.number().nullable(),
   market_cap: z.number().nullable(),
   total_volume: z.number().nullable(),
-  price_change_percentage_24h: z.number().nullable(),
+  price_change_percentage_selected_timeframe: z.number().nullable(),
   last_updated: z.string().nullable(),
 });
 export type CryptoCoinData = z.infer<typeof ProcessedCoinDataSchema>;
 
 const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3';
+const SUPPORTED_TIME_FRAMES = ["1h", "24h", "7d", "14d", "30d", "200d", "1y"];
+
 
 /**
  * Fetches a list of all coins from CoinGecko for symbol-to-ID mapping.
  * @returns A promise that resolves to an array of CoinListItems.
  */
 async function fetchCoinList(): Promise<CoinListItem[]> {
-  const url = `${COINGECKO_API_BASE_URL}/coins/list`;
+  const url = `${COINGECKO_API_BASE_URL}/coins/list?include_platform=false`;
   try {
     const response = await fetch(url, {
       headers: { 'Accept': 'application/json' },
-      cache: 'force-cache', // Cache this aggressively as it changes infrequently
-      next: { revalidate: 3600 * 24 } // Revalidate once a day
+      // Cache this aggressively as it changes infrequently. Force revalidation once per day.
+      next: { revalidate: 86400 } // 24 hours in seconds
     });
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`CoinGecko API error (coins/list): ${response.status} ${response.statusText}`, errorBody);
+      console.error(`CoinGecko API error (coins/list): ${response.status} ${response.statusText}`, { errorBody });
       if (response.status === 429) {
         throw new Error(`CoinGecko API rate limit exceeded while fetching coin list. (Status: 429)`);
       }
@@ -100,16 +104,23 @@ async function fetchCoinList(): Promise<CoinListItem[]> {
 
 /**
  * Fetches market data from CoinGecko.
- * If symbols are provided, fetches data for those specific coins by first converting symbols to IDs.
+ * If symbols are provided, fetches data for those specific coins.
  * Otherwise, fetches a list of top coins by market cap.
  * @param count - The number of top coins to fetch if symbols is not provided.
  * @param symbols - Optional comma-separated string of coin symbols (e.g., "btc,eth").
+ * @param timeFrame - The time frame for price change percentage (e.g., "1h", "24h", "7d").
  * @returns A promise that resolves to an array of processed coin market data.
  */
-export async function fetchCoinData(count: number = 5, symbols?: string): Promise<CryptoCoinData[]> {
+export async function fetchCoinData(
+  count: number = 5,
+  symbols?: string,
+  timeFrame: string = "24h" // Default to 24h
+): Promise<CryptoCoinData[]> {
   const vs_currency = 'usd';
   const order = 'market_cap_desc';
   let coinGeckoIdsToFetch: string | undefined = undefined;
+
+  const validTimeFrame = SUPPORTED_TIME_FRAMES.includes(timeFrame) ? timeFrame : "24h";
 
   if (symbols && symbols.trim() !== '') {
     const coinList = await fetchCoinList();
@@ -125,12 +136,14 @@ export async function fetchCoinData(count: number = 5, symbols?: string): Promis
     }
     if (ids.length === 0) {
         console.warn(`No valid CoinGecko IDs found for symbols: ${symbols}`);
-        return []; // Return empty if no valid IDs were found from symbols
+        return [];
     }
     coinGeckoIdsToFetch = ids.join(',');
   }
 
-  let url = `${COINGECKO_API_BASE_URL}/coins/markets?vs_currency=${vs_currency}&order=${order}&price_change_percentage=24h&sparkline=false`;
+  // Construct the URL for /coins/markets
+  // The price_change_percentage parameter tells CoinGecko which price change fields to include.
+  let url = `${COINGECKO_API_BASE_URL}/coins/markets?vs_currency=${vs_currency}&order=${order}&price_change_percentage=${validTimeFrame}&sparkline=false`;
 
   if (coinGeckoIdsToFetch) {
     url += `&ids=${coinGeckoIdsToFetch}`;
@@ -140,47 +153,53 @@ export async function fetchCoinData(count: number = 5, symbols?: string): Promis
 
   try {
     const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-      },
-      cache: 'no-store',
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store', // Data is time-sensitive
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`CoinGecko API error (coins/markets): ${response.status} ${response.statusText}`, errorBody);
+      console.error(`CoinGecko API error (coins/markets): ${response.status} ${response.statusText}`, { errorBody, url });
       if (response.status === 429) {
         throw new Error(`CoinGecko API rate limit exceeded. Please wait and try again. (Status: 429)`);
       }
       if (response.status === 404 && coinGeckoIdsToFetch) {
-        throw new Error(`One or more coin IDs derived from symbols not found: ${coinGeckoIdsToFetch}. (Status: 404)`);
+        throw new Error(`One or more coins derived from symbols not found: ${coinGeckoIdsToFetch}. (Status: 404)`);
       }
       throw new Error(`Failed to fetch market data from CoinGecko: ${response.statusText} (Status: ${response.status})`);
     }
     
     const data = await response.json();
     
-    if (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0) {
+    if (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0 && coinGeckoIdsToFetch) {
+        // This can happen if valid IDs were passed but CoinGecko returned an empty object for some reason (e.g. non-existent combination)
+        console.warn(`CoinGecko returned empty object for IDs: ${coinGeckoIdsToFetch}`);
         return [];
     }
+
 
     const validationResult = z.array(CoinGeckoMarketCoinSchema).safeParse(data);
 
     if (!validationResult.success) {
-      console.error("CoinGecko API response validation error (coins/markets):", validationResult.error.issues);
+      console.error("CoinGecko API response validation error (coins/markets):", validationResult.error.issues, {dataReceived: data});
       throw new Error("Invalid data format received from CoinGecko API (coins/markets).");
     }
 
-    const processedData: CryptoCoinData[] = validationResult.data.map(coin => ({
-      id: coin.id,
-      symbol: coin.symbol.toUpperCase(),
-      name: coin.name,
-      current_price: coin.current_price,
-      market_cap: coin.market_cap,
-      total_volume: coin.total_volume,
-      price_change_percentage_24h: coin.price_change_percentage_24h,
-      last_updated: coin.last_updated,
-    }));
+    const priceChangeKey = `price_change_percentage_${validTimeFrame}_in_currency`;
+
+    const processedData: CryptoCoinData[] = validationResult.data.map(coin => {
+      const coinTyped = coin as any; // Type assertion to access dynamic key
+      return {
+        id: coin.id,
+        symbol: coin.symbol.toUpperCase(),
+        name: coin.name,
+        current_price: coin.current_price,
+        market_cap: coin.market_cap,
+        total_volume: coin.total_volume,
+        price_change_percentage_selected_timeframe: coinTyped[priceChangeKey] ?? null,
+        last_updated: coin.last_updated,
+      };
+    });
 
     return processedData;
 
