@@ -20,7 +20,7 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
 
 // Using CoinGecko IDs now
 const DEFAULT_COIN_LIST = "bitcoin,ethereum,solana,dogecoin,cardano,polkadot,chainlink,matic-network,ripple,litecoin";
-const REFRESH_INTERVAL = 60 * 1000; // 60 seconds
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 export default function TradeWisePage() {
   const [recommendations, setRecommendations] = useState<TradingRecommendation[]>([]);
