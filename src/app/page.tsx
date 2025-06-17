@@ -99,7 +99,6 @@ export default function TradeWisePage() {
     setSortKey("confidenceLevel");
     setSortDirection("desc");
     setCoinListInput(DEFAULT_COIN_LIST);
-    // Optionally, trigger a re-fetch with default settings immediately
     fetchRecommendations(DEFAULT_COIN_LIST, true); 
   };
 
@@ -121,6 +120,10 @@ export default function TradeWisePage() {
         case "coin":
           valA = a.coin;
           valB = b.coin;
+          break;
+        case "currentPrice":
+          valA = a.currentPrice;
+          valB = b.currentPrice;
           break;
         case "entryPrice":
           valA = a.entryPrice;

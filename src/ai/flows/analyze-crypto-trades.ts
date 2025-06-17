@@ -24,6 +24,7 @@ const AnalyzeCryptoTradesOutputSchema = z.object({
   tradingRecommendations: z.array(
     z.object({
       coin: z.string().describe('The ticker symbol of the recommended coin.'),
+      currentPrice: z.number().describe('The current market price of the coin.'),
       entryPrice: z.number().describe('The recommended entry price for the coin.'),
       exitPrice: z.number().describe('The recommended exit price for the coin.'),
       confidenceLevel: z
@@ -46,7 +47,7 @@ const analyzeCryptoTradesPrompt = ai.definePrompt({
   name: 'analyzeCryptoTradesPrompt',
   input: {schema: AnalyzeCryptoTradesInputSchema},
   output: {schema: AnalyzeCryptoTradesOutputSchema},
-  prompt: `You are an AI-powered crypto trading analyst. Analyze the following crypto coins based on technical analysis and order book data to provide trading recommendations, including entry and exit prices, confidence levels, and key indicators.\n\nCoins to analyze: {{{coinList}}}\n\nFormat your response as a JSON array of trading recommendations.  Each object in the array should contain the coin ticker, recommended entry price, recommended exit price, a confidence level (High, Medium, Low), a list of technical indicators, and a summary of the order book analysis.\n`,
+  prompt: `You are an AI-powered crypto trading analyst. Analyze the following crypto coins based on technical analysis and order book data to provide trading recommendations, including their current price, recommended entry and exit prices, confidence levels, and key indicators.\n\nCoins to analyze: {{{coinList}}}\n\nFormat your response as a JSON array of trading recommendations.  Each object in the array should contain the coin ticker, current price, recommended entry price, recommended exit price, a confidence level (High, Medium, Low), a list of technical indicators, and a summary of the order book analysis.\n`,
 });
 
 const analyzeCryptoTradesFlow = ai.defineFlow(

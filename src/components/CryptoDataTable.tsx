@@ -84,6 +84,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
             <TableRow className="hover:bg-card">
               {[
                 { key: "coin", label: "Coin" },
+                { key: "currentPrice", label: "Current Price" },
                 { key: "entryPrice", label: "Entry Price" },
                 { key: "exitPrice", label: "Exit Price" },
                 { key: "confidenceLevel", label: "Confidence" },
@@ -106,7 +107,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
           <TableBody>
             {recommendations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                   No recommendations available. Try analyzing some coins.
                 </TableCell>
               </TableRow>
@@ -114,6 +115,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
               recommendations.map((rec) => (
                 <TableRow key={rec.coin} className="hover:bg-muted/50">
                   <TableCell className="font-medium px-4 py-3">{rec.coin}</TableCell>
+                  <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.currentPrice)}</TableCell>
                   <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.entryPrice)}</TableCell>
                   <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.exitPrice)}</TableCell>
                   <TableCell className="px-4 py-3">

@@ -16,7 +16,7 @@ export default function SkeletonTable({ rows = 5 }: { rows?: number }) {
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-card">
-            {Array.from({ length: 6 }).map((_, index) => (
+            {Array.from({ length: 7 }).map((_, index) => ( // Increased length to 7 for the new column
               <TableHead key={index} className="px-4 py-3">
                 <Skeleton className="h-5 w-20" />
               </TableHead>
@@ -27,8 +27,9 @@ export default function SkeletonTable({ rows = 5 }: { rows?: number }) {
           {Array.from({ length: rows }).map((_, rowIndex) => (
             <TableRow key={rowIndex} className="hover:bg-muted/50">
               <TableCell className="px-4 py-3"><Skeleton className="h-5 w-16" /></TableCell>
-              <TableCell className="px-4 py-3"><Skeleton className="h-5 w-24" /></TableCell>
-              <TableCell className="px-4 py-3"><Skeleton className="h-5 w-24" /></TableCell>
+              <TableCell className="px-4 py-3"><Skeleton className="h-5 w-24" /></TableCell> {/* Current Price */}
+              <TableCell className="px-4 py-3"><Skeleton className="h-5 w-24" /></TableCell> {/* Entry Price */}
+              <TableCell className="px-4 py-3"><Skeleton className="h-5 w-24" /></TableCell> {/* Exit Price */}
               <TableCell className="px-4 py-3"><Skeleton className="h-8 w-20 rounded-full" /></TableCell>
               <TableCell className="px-4 py-3"><Skeleton className="h-7 w-7 rounded-full" /></TableCell>
               <TableCell className="px-4 py-3"><Skeleton className="h-7 w-7 rounded-full" /></TableCell>
