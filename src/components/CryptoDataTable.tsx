@@ -21,6 +21,8 @@ import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, 
 import type { AnalyzeCryptoTradesOutput } from "@/ai/flows/analyze-crypto-trades";
 import type { SortKey, SortDirection } from "./FilterSortControls";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import CryptoListItem from "./CryptoListItem"; // New import
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { tradingStrategy?: string };
 
@@ -38,19 +40,19 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
 
   switch (level?.toLowerCase()) {
     case "high":
-      variant = "default"; 
+      variant = "default";
       className = "bg-accent text-accent-foreground hover:bg-accent/90";
       IconComponent = CheckCircle;
       break;
     case "medium":
-      variant = "secondary"; 
+      variant = "secondary";
       className = "bg-[hsl(var(--chart-4))] text-primary-foreground hover:bg-[hsl(var(--chart-4))]/90";
       IconComponent = AlertCircle;
       break;
     case "low":
       variant = "destructive";
       className = "bg-destructive text-destructive-foreground hover:bg-destructive/90";
-      IconComponent = AlertCircle; 
+      IconComponent = AlertCircle;
       break;
     default:
       className = "bg-muted text-muted-foreground";
@@ -74,7 +76,7 @@ const SignalDisplay = ({ signal }: { signal: string }) => {
       break;
     case "sell":
       IconComponent = TrendingDown;
-      textColor = "text-destructive"; 
+      textColor = "text-destructive";
       break;
     case "hold":
       IconComponent = Minus;
@@ -100,13 +102,15 @@ const formatPrice = (price: number | undefined | null) => {
   if (price < 0.01 && price > 0) {
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumSignificantDigits: 6 });
   }
-  if (price >= 1 || price === 0) { 
+  if (price >= 1 || price === 0) {
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 };
 
 export default function CryptoDataTable({ recommendations, sortKey, sortDirection, onSort }: CryptoDataTableProps) {
+  const isMobile = useIsMobile();
+
   const renderSortIcon = (key: SortKey) => {
     if (sortKey === key) {
       return sortDirection === "asc" ? <TrendingUp className="ml-1 h-3.5 w-3.5 sm:ml-2 sm:h-4 sm:w-4" /> : <TrendingDown className="ml-1 h-3.5 w-3.5 sm:ml-2 sm:h-4 sm:w-4" />;
@@ -120,12 +124,28 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     { key: "entryPrice", label: "Entry Price" },
     { key: "exitPrice", label: "Exit Price" },
     { key: "signal", label: "Signal" },
-    { key: null, label: "Strategy" }, 
+    { key: null, label: "Strategy" },
     { key: "confidenceLevel", label: "Confidence" },
-    { key: null, label: "Indicators" }, 
-    { key: null, label: "Analysis" },   
+    { key: null, label: "Indicators" },
+    { key: null, label: "Analysis" },
   ] as const;
 
+  if (isMobile) {
+    if (recommendations.length === 0) {
+      return (
+        <div className="py-10 text-center text-muted-foreground">
+          No recommendations available. Try analyzing some coins.
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-0">
+        {recommendations.map((rec) => (
+          <CryptoListItem key={`${rec.coin}-${rec.coinName}`} recommendation={rec} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -157,7 +177,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                 </TableRow>
                 ) : (
                 recommendations.map((rec) => (
-                    <TableRow key={rec.coin} className="hover:bg-muted/50">
+                    <TableRow key={`${rec.coin}-${rec.coinName}`} className="hover:bg-muted/50">
                     <TableCell className="font-medium px-2 py-2 sm:px-4 sm:py-3 uppercase text-xs sm:text-sm whitespace-nowrap">{rec.coinName} ({rec.coin})</TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.currentPrice)}</TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.entryPrice)}</TableCell>
@@ -169,8 +189,8 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                         <Tooltip delayDuration={100}>
                             <TooltipTrigger asChild>
                                 <span className="flex items-center gap-1 cursor-default">
-                                    <Brain className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary/80" /> 
-                                    {rec.tradingStrategy || "N/A"}
+                                    <Brain className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary/80" />
+                                    <span className="truncate max-w-[120px] lg:max-w-[180px]">{rec.tradingStrategy || "N/A"}</span>
                                 </span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-[200px] sm:max-w-xs bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">

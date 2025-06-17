@@ -10,9 +10,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
+import SkeletonListItem from "./SkeletonListItem"; // New import
 
-export default function SkeletonTable({ rows = 5 }: { rows?: number }) {
-  const numColumns = 9; // Increased to 9 for the new "Strategy" column
+export default function SkeletonTable({ rows = 3 }: { rows?: number }) { // Default to 3 for mobile list
+  const isMobile = useIsMobile();
+  const numColumns = 9;
+
+  if (isMobile) {
+    return (
+      <div className="space-y-0">
+        {Array.from({ length: rows }).map((_, rowIndex) => (
+          <SkeletonListItem key={rowIndex} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border shadow-md overflow-hidden bg-card">
@@ -20,7 +33,7 @@ export default function SkeletonTable({ rows = 5 }: { rows?: number }) {
         <Table className="min-w-full">
           <TableHeader>
             <TableRow className="hover:bg-card">
-              {Array.from({ length: numColumns }).map((_, index) => ( 
+              {Array.from({ length: numColumns }).map((_, index) => (
                 <TableHead key={index} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
                   <Skeleton className="h-4 sm:h-5 w-16 sm:w-20" />
                 </TableHead>
@@ -28,14 +41,14 @@ export default function SkeletonTable({ rows = 5 }: { rows?: number }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: rows }).map((_, rowIndex) => (
+            {Array.from({ length: rows }).map((_, rowIndex) => ( // Use same rows prop for desktop
               <TableRow key={rowIndex} className="hover:bg-muted/50">
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-12 sm:w-16" /></TableCell>
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell> 
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell> 
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell> 
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-16 sm:w-20" /></TableCell> 
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-28" /></TableCell> {/* Strategy column */}
+                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>
+                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>
+                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>
+                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-16 sm:w-20" /></TableCell>
+                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-28" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-7 sm:h-8 w-16 sm:w-20 rounded-full" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
