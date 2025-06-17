@@ -70,7 +70,7 @@ const SignalDisplay = ({ signal }: { signal: string }) => {
   switch (signal?.toLowerCase()) {
     case "buy":
       IconComponent = TrendingUp;
-      textColor = "text-accent-foreground"; 
+      textColor = "text-accent-foreground"; // Using accent for buy, which is green in dark theme
       break;
     case "sell":
       IconComponent = TrendingDown;
@@ -78,7 +78,7 @@ const SignalDisplay = ({ signal }: { signal: string }) => {
       break;
     case "hold":
       IconComponent = Minus;
-      textColor = "text-muted-foreground";
+      textColor = "text-muted-foreground"; // Using a more neutral color like chart-4 (orange/yellow)
       break;
     default:
       IconComponent = HelpCircle;
@@ -97,10 +97,15 @@ const formatPrice = (price: number | undefined | null) => {
   if (typeof price !== 'number' || isNaN(price)) {
     return "N/A";
   }
-  if (price >= 1) {
+  // Use more significant digits for prices less than $0.01
+  if (price < 0.01 && price > 0) {
+    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumSignificantDigits: 6 });
+  }
+  if (price >= 1 || price === 0) { // Also handle 0 with 2 decimal places
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+  // For prices between $0.01 and $1
+  return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 };
 
 export default function CryptoDataTable({ recommendations, sortKey, sortDirection, onSort }: CryptoDataTableProps) {
@@ -153,7 +158,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
             ) : (
               recommendations.map((rec) => (
                 <TableRow key={rec.coin} className="hover:bg-muted/50">
-                  <TableCell className="font-medium px-4 py-3">{rec.coin}</TableCell>
+                  <TableCell className="font-medium px-4 py-3 uppercase">{rec.coin}</TableCell>
                   <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.currentPrice)}</TableCell>
                   <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.entryPrice)}</TableCell>
                   <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.exitPrice)}</TableCell>
@@ -172,11 +177,15 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs bg-popover text-popover-foreground p-3 rounded-md shadow-lg">
                         <p className="font-semibold mb-1">Technical Indicators:</p>
-                        <ul className="list-disc list-inside text-sm space-y-0.5">
-                          {rec.technicalIndicators && rec.technicalIndicators.map((indicator, idx) => (
-                            <li key={idx}>{indicator}</li>
-                          ))}
-                        </ul>
+                        {rec.technicalIndicators && rec.technicalIndicators.length > 0 ? (
+                          <ul className="list-disc list-inside text-sm space-y-0.5">
+                            {rec.technicalIndicators.map((indicator, idx) => (
+                              <li key={idx}>{indicator}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm">N/A</p>
+                        )}
                       </TooltipContent>
                     </Tooltip>
                   </TableCell>
@@ -189,7 +198,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                       </TooltipTrigger>
                       <TooltipContent className="max-w-md bg-popover text-popover-foreground p-3 rounded-md shadow-lg">
                          <p className="font-semibold mb-1">Order Book Analysis:</p>
-                        <p className="text-sm">{rec.orderBookAnalysis}</p>
+                        <p className="text-sm">{rec.orderBookAnalysis || "N/A"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TableCell>
