@@ -51,7 +51,7 @@ export default function TradeWisePage() {
 
       if (!marketData || marketData.length === 0) {
         setRecommendations([]);
-        const message = coinSymbolsToFetch ? `No market data found for the specified symbols: ${coinSymbolsToFetch}. Please check the symbols.` : "No market data found from CoinGecko for top coins.";
+        const message = coinSymbolsToFetch ? `No market data found for the specified symbols: ${coinSymbolsToFetch}. Please check the symbols and try again.` : "No market data found from CoinGecko for top coins.";
         setError(message);
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Market Data Error", description: message, variant: "destructive" });
@@ -88,7 +88,7 @@ export default function TradeWisePage() {
           return {
             ...rec,
             currentPrice: matchedMarketData?.current_price ?? rec.currentPrice,
-            coinName: matchedMarketData?.name ?? rec.coinName, // Ensure coinName is populated
+            coinName: matchedMarketData?.name ?? rec.coinName, 
           };
         });
         setRecommendations(updatedRecommendations);
@@ -149,7 +149,6 @@ export default function TradeWisePage() {
   const filteredAndSortedRecommendations = useMemo(() => {
     let filtered = [...recommendations];
     
-    // Confidence filter is still client-side after data is fetched by API based on search query or top N
     if (confidenceFilter !== "All") {
       filtered = filtered.filter(
         (rec) => rec.confidenceLevel.toLowerCase() === confidenceFilter.toLowerCase()
@@ -163,7 +162,7 @@ export default function TradeWisePage() {
       let valA, valB;
       switch (sortKey) {
         case "coin":
-          valA = a.coinName; // Sorting by coinName for user readability
+          valA = a.coinName; 
           valB = b.coinName;
           break;
         case "currentPrice":
@@ -218,7 +217,7 @@ export default function TradeWisePage() {
         onRefresh={() => performAnalysis(searchQuery.trim() || undefined)} 
         isRefreshing={isLoading}
       />
-      <main className="flex-grow container mx-auto px-4 md:px-8 py-8">
+      <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-8 py-4 sm:py-8">
         <FilterSortControls
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -234,7 +233,7 @@ export default function TradeWisePage() {
         />
 
         {error && !isLoading && (
-          <Alert variant="destructive" className="mb-6">
+          <Alert variant="destructive" className="mb-4 sm:mb-6">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
@@ -252,7 +251,7 @@ export default function TradeWisePage() {
           />
         )}
       </main>
-      <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border/50">
+      <footer className="py-4 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/50">
         TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Data from <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">CoinGecko</a>.
       </footer>
     </div>

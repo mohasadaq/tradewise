@@ -56,8 +56,8 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
       className = "bg-muted text-muted-foreground";
   }
   return (
-    <Badge variant={variant} className={`capitalize ${className} flex items-center gap-1.5 text-xs`}>
-      <IconComponent className="h-3.5 w-3.5" />
+    <Badge variant={variant} className={`capitalize ${className} flex items-center gap-1 text-xs px-2 py-0.5`}>
+      <IconComponent className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
       {level || "N/A"}
     </Badge>
   );
@@ -78,15 +78,15 @@ const SignalDisplay = ({ signal }: { signal: string }) => {
       break;
     case "hold":
       IconComponent = Minus;
-      textColor = "text-muted-foreground"; // Using a more neutral color like chart-4 (orange/yellow)
+      textColor = "text-muted-foreground";
       break;
     default:
       IconComponent = HelpCircle;
   }
 
   return (
-    <span className={cn("flex items-center gap-1.5 capitalize", textColor)}>
-      <IconComponent className="h-4 w-4" />
+    <span className={cn("flex items-center gap-1 sm:gap-1.5 capitalize text-xs sm:text-sm", textColor)}>
+      <IconComponent className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
       {signal || "N/A"}
     </span>
   );
@@ -97,23 +97,21 @@ const formatPrice = (price: number | undefined | null) => {
   if (typeof price !== 'number' || isNaN(price)) {
     return "N/A";
   }
-  // Use more significant digits for prices less than $0.01
   if (price < 0.01 && price > 0) {
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumSignificantDigits: 6 });
   }
-  if (price >= 1 || price === 0) { // Also handle 0 with 2 decimal places
+  if (price >= 1 || price === 0) { 
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  // For prices between $0.01 and $1
   return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 };
 
 export default function CryptoDataTable({ recommendations, sortKey, sortDirection, onSort }: CryptoDataTableProps) {
   const renderSortIcon = (key: SortKey) => {
     if (sortKey === key) {
-      return sortDirection === "asc" ? <TrendingUp className="ml-2 h-4 w-4" /> : <TrendingDown className="ml-2 h-4 w-4" />;
+      return sortDirection === "asc" ? <TrendingUp className="ml-1 h-3.5 w-3.5 sm:ml-2 sm:h-4 sm:w-4" /> : <TrendingDown className="ml-1 h-3.5 w-3.5 sm:ml-2 sm:h-4 sm:w-4" />;
     }
-    return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
+    return <ArrowUpDown className="ml-1 h-3.5 w-3.5 sm:ml-2 sm:h-4 sm:w-4 opacity-50" />;
   };
 
   const tableHeaders = [
@@ -123,90 +121,92 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     { key: "exitPrice", label: "Exit Price" },
     { key: "signal", label: "Signal" },
     { key: "confidenceLevel", label: "Confidence" },
-    { key: null, label: "Technical Indicators" },
-    { key: null, label: "Order Book Analysis" },
+    { key: null, label: "Indicators" },
+    { key: null, label: "Analysis" },
   ] as const;
 
 
   return (
     <TooltipProvider>
       <div className="rounded-lg border shadow-md overflow-hidden bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-card">
-              {tableHeaders.map((header) => (
-                <TableHead key={header.label} className="px-4 py-3">
-                  {header.key ? (
-                     <Button variant="ghost" onClick={() => onSort(header.key as SortKey)} className="px-1 py-1 h-auto text-xs sm:text-sm">
-                       {header.label}
-                       {renderSortIcon(header.key as SortKey)}
-                     </Button>
-                  ) : (
-                    <span className="text-xs sm:text-sm font-medium text-muted-foreground">{header.label}</span>
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {recommendations.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={tableHeaders.length} className="h-24 text-center text-muted-foreground">
-                  No recommendations available. Try analyzing some coins.
-                </TableCell>
-              </TableRow>
-            ) : (
-              recommendations.map((rec) => (
-                <TableRow key={rec.coin} className="hover:bg-muted/50">
-                  <TableCell className="font-medium px-4 py-3 uppercase">{rec.coin}</TableCell>
-                  <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.currentPrice)}</TableCell>
-                  <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.entryPrice)}</TableCell>
-                  <TableCell className="px-4 py-3 tabular-nums">${formatPrice(rec.exitPrice)}</TableCell>
-                  <TableCell className="px-4 py-3">
-                    <SignalDisplay signal={rec.signal} />
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <ConfidenceBadge level={rec.confidenceLevel} />
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <Tooltip delayDuration={100}>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Info className="h-4 w-4 text-primary" />
+        <div className="overflow-x-auto">
+            <Table className="min-w-full">
+            <TableHeader>
+                <TableRow className="hover:bg-card">
+                {tableHeaders.map((header) => (
+                    <TableHead key={header.label} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
+                    {header.key ? (
+                        <Button variant="ghost" onClick={() => onSort(header.key as SortKey)} className="px-1 py-1 h-auto text-xs sm:text-sm">
+                        {header.label}
+                        {renderSortIcon(header.key as SortKey)}
                         </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-popover text-popover-foreground p-3 rounded-md shadow-lg">
-                        <p className="font-semibold mb-1">Technical Indicators:</p>
-                        {rec.technicalIndicators && rec.technicalIndicators.length > 0 ? (
-                          <ul className="list-disc list-inside text-sm space-y-0.5">
-                            {rec.technicalIndicators.map((indicator, idx) => (
-                              <li key={idx}>{indicator}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm">N/A</p>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <Tooltip delayDuration={100}>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Info className="h-4 w-4 text-primary" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-md bg-popover text-popover-foreground p-3 rounded-md shadow-lg">
-                         <p className="font-semibold mb-1">Order Book Analysis:</p>
-                        <p className="text-sm">{rec.orderBookAnalysis || "N/A"}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TableCell>
+                    ) : (
+                        <span className="text-xs sm:text-sm font-medium text-muted-foreground">{header.label}</span>
+                    )}
+                    </TableHead>
+                ))}
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+                {recommendations.length === 0 ? (
+                <TableRow>
+                    <TableCell colSpan={tableHeaders.length} className="h-24 text-center text-muted-foreground">
+                    No recommendations available. Try analyzing some coins.
+                    </TableCell>
+                </TableRow>
+                ) : (
+                recommendations.map((rec) => (
+                    <TableRow key={rec.coin} className="hover:bg-muted/50">
+                    <TableCell className="font-medium px-2 py-2 sm:px-4 sm:py-3 uppercase text-xs sm:text-sm whitespace-nowrap">{rec.coin}</TableCell>
+                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.currentPrice)}</TableCell>
+                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.entryPrice)}</TableCell>
+                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.exitPrice)}</TableCell>
+                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
+                        <SignalDisplay signal={rec.signal} />
+                    </TableCell>
+                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
+                        <ConfidenceBadge level={rec.confidenceLevel} />
+                    </TableCell>
+                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3">
+                        <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7">
+                            <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[200px] sm:max-w-xs bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">
+                            <p className="font-semibold mb-1 text-xs sm:text-sm">Technical Indicators:</p>
+                            {rec.technicalIndicators && rec.technicalIndicators.length > 0 ? (
+                            <ul className="list-disc list-inside text-xs sm:text-sm space-y-0.5">
+                                {rec.technicalIndicators.map((indicator, idx) => (
+                                <li key={idx}>{indicator}</li>
+                                ))}
+                            </ul>
+                            ) : (
+                            <p className="text-xs sm:text-sm">N/A</p>
+                            )}
+                        </TooltipContent>
+                        </Tooltip>
+                    </TableCell>
+                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3">
+                        <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7">
+                            <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[240px] sm:max-w-md bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">
+                            <p className="font-semibold mb-1 text-xs sm:text-sm">Order Book Analysis:</p>
+                            <p className="text-xs sm:text-sm">{rec.orderBookAnalysis || "N/A"}</p>
+                        </TooltipContent>
+                        </Tooltip>
+                    </TableCell>
+                    </TableRow>
+                ))
+                )}
+            </TableBody>
+            </Table>
+        </div>
       </div>
     </TooltipProvider>
   );
