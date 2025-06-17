@@ -41,7 +41,7 @@ const CoinGeckoMarketDataSchema = z.object({
 
 export type CoinMarketData = z.infer<typeof CoinGeckoMarketDataSchema>;
 
-// This schema is used internally for validation and should not be exported from a 'use server' file.
+// This schema is used internally for validation.
 const CoinMarketDataServiceValidationSchema = z.array(CoinGeckoMarketDataSchema);
 
 
@@ -56,20 +56,20 @@ export async function fetchCoinData(coinIds: string): Promise<CoinMarketData[]> 
   }
   const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/coins/markets';
   const vsCurrency = 'usd';
-  // Note: For production apps, consider adding an API key if using a paid CoinGecko plan.
-  // For public endpoints, it's often not strictly required for low volume.
   const url = `${COINGECKO_API_URL}?vs_currency=${vsCurrency}&ids=${coinIds.trim()}&order=market_cap_desc&per_page=250&page=1&sparkline=false`;
 
   try {
-    const response = await fetch(url, { cache: 'no-store' }); // Disable caching for fresh data
+    const response = await fetch(url, { cache: 'no-store' }); 
     if (!response.ok) {
       const errorBody = await response.text();
       console.error(`CoinGecko API error: ${response.status} ${response.statusText}`, errorBody);
-      throw new Error(`Failed to fetch data from CoinGecko: ${response.statusText}`);
+      if (response.status === 429) {
+        throw new Error(`CoinGecko API rate limit exceeded. Please wait and try again. (Status: 429)`);
+      }
+      throw new Error(`Failed to fetch data from CoinGecko: ${response.statusText} (Status: ${response.status})`);
     }
     const data = await response.json();
     
-    // Validate data with Zod schema
     const validationResult = CoinMarketDataServiceValidationSchema.safeParse(data);
     if (!validationResult.success) {
       console.error("CoinGecko API response validation error:", validationResult.error.issues);
@@ -78,8 +78,6 @@ export async function fetchCoinData(coinIds: string): Promise<CoinMarketData[]> 
     return validationResult.data;
   } catch (error) {
     console.error('Error fetching coin data from CoinGecko:', error);
-    // In a real app, you might want to re-throw or handle this more gracefully
-    // For now, returning an empty array or throwing can be decided based on UX needs
     throw error; 
   }
 }
