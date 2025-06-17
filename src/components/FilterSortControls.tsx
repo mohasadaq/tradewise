@@ -51,18 +51,18 @@ export default function FilterSortControls({
         <div className="lg:col-span-1 md:col-span-2 space-y-2">
           <p className="text-sm font-medium text-foreground">Analysis Scope</p>
           <p className="text-xs text-muted-foreground">
-            Showing analysis for the top 5 cryptocurrencies by market cap from CoinGecko.
+            Enter CoinGecko IDs (e.g. "bitcoin,ethereum") to search, or leave blank for top coins.
           </p>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="searchFilter">Search Coin</Label>
+          <Label htmlFor="searchFilter">Search by CoinGecko IDs</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="searchFilter"
               type="text"
-              placeholder="e.g. Bitcoin or BTC"
+              placeholder="e.g. bitcoin,ethereum,solana"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-background"
@@ -127,11 +127,11 @@ export default function FilterSortControls({
       </div>
       <div className="mt-6 flex flex-col sm:flex-row justify-end gap-4">
         <Button variant="outline" onClick={onResetFilters} disabled={isLoading}>
-            <ListRestart className="mr-2 h-4 w-4" /> Reset Filters & Search
+            <ListRestart className="mr-2 h-4 w-4" /> Reset & Show Top Coins
         </Button>
         <Button onClick={onAnalyze} disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin': ''}`} /> 
-          {isLoading ? 'Analyzing...' : 'Refresh Analysis'}
+          {isLoading ? 'Analyzing...' : (searchQuery.trim() ? 'Analyze Searched IDs' : 'Analyze Top Coins')}
         </Button>
       </div>
     </div>

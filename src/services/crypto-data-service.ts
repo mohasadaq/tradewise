@@ -42,7 +42,7 @@ const CoinGeckoMarketCoinSchema = z.object({
 
 // This is the structure we'll return from our service function.
 const ProcessedCoinDataSchema = z.object({
-  id: z.string(), // Using CoinGecko's id as a consistent string ID for our app
+  id: z.string(),
   symbol: z.string(),
   name: z.string(),
   current_price: z.number().nullable(),
@@ -53,24 +53,36 @@ const ProcessedCoinDataSchema = z.object({
 });
 export type CryptoCoinData = z.infer<typeof ProcessedCoinDataSchema>;
 
-const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/coins/markets';
+const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3/coins/markets';
 
 /**
- * Fetches market data for a list of top coins from CoinGecko.
- * @param count - The number of top coins to fetch (default 10).
+ * Fetches market data from CoinGecko.
+ * If coinIds are provided, fetches data for those specific coins.
+ * Otherwise, fetches a list of top coins by market cap.
+ * @param count - The number of top coins to fetch if coinIds is not provided (default 5).
+ * @param coinIds - Optional comma-separated string of CoinGecko coin IDs (e.g., "bitcoin,ethereum").
  * @returns A promise that resolves to an array of processed coin market data.
  */
-export async function fetchCoinData(count: number = 10): Promise<CryptoCoinData[]> {
+export async function fetchCoinData(count: number = 5, coinIds?: string): Promise<CryptoCoinData[]> {
   const vs_currency = 'usd';
-  const order = 'market_cap_desc';
-  const url = `${COINGECKO_API_URL}?vs_currency=${vs_currency}&order=${order}&per_page=${count}&page=1&sparkline=false&price_change_percentage=24h`;
+  const order = 'market_cap_desc'; // Used for top coins, less relevant for specific IDs but good default
+  
+  let url = `${COINGECKO_API_BASE_URL}?vs_currency=${vs_currency}&order=${order}&price_change_percentage=24h&sparkline=false`;
+
+  if (coinIds && coinIds.trim() !== '') {
+    url += `&ids=${coinIds.trim()}`;
+    // per_page is not needed when specific ids are requested, but API handles it gracefully
+    // We can also cap the number of IDs if needed, but CoinGecko handles many.
+  } else {
+    url += `&per_page=${count}&page=1`;
+  }
 
   try {
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
       },
-      cache: 'no-store', // Ensure fresh data
+      cache: 'no-store', 
     });
 
     if (!response.ok) {
@@ -79,11 +91,19 @@ export async function fetchCoinData(count: number = 10): Promise<CryptoCoinData[
       if (response.status === 429) {
         throw new Error(`CoinGecko API rate limit exceeded. Please wait and try again. (Status: 429)`);
       }
+      if (response.status === 404 && coinIds) {
+        throw new Error(`One or more coin IDs not found: ${coinIds}. Please check the CoinGecko IDs. (Status: 404)`);
+      }
       throw new Error(`Failed to fetch data from CoinGecko: ${response.statusText} (Status: ${response.status})`);
     }
     
     const data = await response.json();
     
+    // If data is an empty object (can happen with bad specific IDs not causing 404), treat as no data
+    if (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0) {
+        return [];
+    }
+
     const validationResult = z.array(CoinGeckoMarketCoinSchema).safeParse(data);
 
     if (!validationResult.success) {
@@ -91,10 +111,9 @@ export async function fetchCoinData(count: number = 10): Promise<CryptoCoinData[
       throw new Error("Invalid data format received from CoinGecko API.");
     }
 
-    // Process the data into the format our app expects
     const processedData: CryptoCoinData[] = validationResult.data.map(coin => ({
       id: coin.id,
-      symbol: coin.symbol.toUpperCase(), // AI might expect uppercase symbols
+      symbol: coin.symbol.toUpperCase(),
       name: coin.name,
       current_price: coin.current_price,
       market_cap: coin.market_cap,

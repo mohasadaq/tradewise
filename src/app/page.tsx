@@ -18,8 +18,8 @@ import { AlertTriangle } from "lucide-react";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { coinName: string };
 
-const NUMBER_OF_COINS_TO_FETCH = 5; // Fetch top 5 coins
-const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5; // Default when no search query
+const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes for auto-refresh of top coins
 
 export default function TradeWisePage() {
   const [recommendations, setRecommendations] = useState<TradingRecommendation[]>([]);
@@ -28,31 +28,46 @@ export default function TradeWisePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // Will hold comma-separated CoinGecko IDs
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
   const [sortKey, setSortKey] = useState<SortKey>("confidenceLevel");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
-  const fetchRecommendations = useCallback(async (isManualRefresh: boolean = false) => {
+  const performAnalysis = useCallback(async (coinIdsToFetch?: string, isAutoRefresh: boolean = false) => {
     setIsLoading(true);
     setError(null);
+    let fetchToastId: string | null = null;
+    if (!isAutoRefresh && !coinIdsToFetch) {
+       fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing top ${NUMBER_OF_COINS_TO_FETCH_DEFAULT} coins.`}).id;
+    } else if (!isAutoRefresh && coinIdsToFetch) {
+        fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing: ${coinIdsToFetch}`}).id;
+    }
+
+
     try {
-      // 1. Fetch market data from CoinGecko (top N coins)
-      const marketData: CryptoCoinData[] = await fetchCoinData(NUMBER_OF_COINS_TO_FETCH);
+      const marketData: CryptoCoinData[] = await fetchCoinData(
+        NUMBER_OF_COINS_TO_FETCH_DEFAULT,
+        coinIdsToFetch // Pass coinIds string if present
+      );
 
       if (!marketData || marketData.length === 0) {
         setRecommendations([]);
-        setError("No market data found from CoinGecko. The API might be temporarily unavailable or returned no data for top coins.");
-        toast({
-          title: "Market Data Error",
-          description: "Could not fetch market data from CoinGecko.",
-          variant: "destructive",
-        });
+        const message = coinIdsToFetch ? `No market data found for the specified CoinGecko IDs: ${coinIdsToFetch}. Please check the IDs.` : "No market data found from CoinGecko for top coins.";
+        setError(message);
+        if (fetchToastId) {
+            toast({id: fetchToastId, title: "Market Data Error", description: message, variant: "destructive" });
+        } else if (!isAutoRefresh) {
+            toast({ title: "Market Data Error", description: message, variant: "destructive" });
+        }
         setIsLoading(false);
         return;
       }
       
-      // 2. Prepare input for AI analysis
+      if (fetchToastId) {
+        toast({id: fetchToastId, title: "Market Data Fetched", description: "Starting AI analysis..."});
+      }
+
+
       const aiInputData: AICoinAnalysisInputData[] = marketData.map(md => ({
         id: md.id, 
         symbol: md.symbol,
@@ -65,7 +80,6 @@ export default function TradeWisePage() {
 
       const input = { coinsData: aiInputData };
       
-      // 3. Call AI for analysis
       const result = await analyzeCryptoTrades(input);
 
       if (result && result.tradingRecommendations) {
@@ -76,51 +90,58 @@ export default function TradeWisePage() {
           return {
             ...rec,
             currentPrice: matchedMarketData?.current_price ?? rec.currentPrice,
-            coinName: matchedMarketData?.name ?? rec.coinName, // Ensure coinName is populated
+            coinName: matchedMarketData?.name ?? rec.coinName,
           };
         });
         setRecommendations(updatedRecommendations);
         setLastUpdated(new Date());
-        if (isManualRefresh) {
-          toast({
-            title: "Analysis Complete",
-            description: `Found ${updatedRecommendations.length} recommendations for top ${NUMBER_OF_COINS_TO_FETCH} coins.`,
-          });
+        const successMessage = `Found ${updatedRecommendations.length} recommendations for ${coinIdsToFetch ? `IDs: ${coinIdsToFetch}` : `top ${marketData.length} coins`}.`;
+        if (fetchToastId) {
+            toast({id: fetchToastId, title: "Analysis Complete", description: successMessage });
+        } else if (!isAutoRefresh) {
+            toast({ title: "Analysis Complete", description: successMessage });
         }
       } else {
         setRecommendations([]);
         setError("No recommendations found or unexpected response from AI.");
-        if (isManualRefresh) {
-          toast({
-            title: "Analysis Issue",
-            description: "No recommendations found or unexpected AI response.",
-            variant: "destructive",
-          });
+        const issueMessage = "No recommendations found or unexpected AI response.";
+        if (fetchToastId) {
+            toast({id: fetchToastId, title: "Analysis Issue", description: issueMessage, variant: "destructive" });
+        } else if (!isAutoRefresh) {
+            toast({ title: "Analysis Issue", description: issueMessage, variant: "destructive" });
         }
       }
     } catch (err) {
-      console.error("Error fetching recommendations:", err);
+      console.error("Error performing analysis:", err);
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-      setError(`Failed to fetch recommendations: ${errorMessage}`);
+      setError(`Analysis failed: ${errorMessage}`);
       setRecommendations([]);
-      toast({
-        title: "Analysis Failed",
-        description: `Error: ${errorMessage}`,
-        variant: "destructive",
-      });
+       if (fetchToastId) {
+            toast({id: fetchToastId, title: "Analysis Failed", description: `Error: ${errorMessage}`, variant: "destructive" });
+        } else if (!isAutoRefresh) {
+            toast({ title: "Analysis Failed", description: `Error: ${errorMessage}`, variant: "destructive" });
+        }
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
+  // Initial fetch for top N coins
   useEffect(() => {
-    fetchRecommendations(); // Initial fetch
-    const intervalId = setInterval(() => fetchRecommendations(), REFRESH_INTERVAL);
+    performAnalysis(undefined, true); // Auto-refresh context for top N
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
+
+  // Interval refresh for top N coins
+  useEffect(() => {
+    const intervalId = setInterval(() => performAnalysis(undefined, true), REFRESH_INTERVAL); // Auto-refresh for top N
     return () => clearInterval(intervalId);
-  }, [fetchRecommendations]);
+  }, [performAnalysis]);
 
   const handleAnalyzeCoins = () => {
-    fetchRecommendations(true); // Pass true for manual refresh
+    // If searchQuery is empty, it will fetch top N coins.
+    // If searchQuery has IDs, it will fetch those specific coins.
+    performAnalysis(searchQuery.trim() || undefined); 
   };
   
   const handleResetFilters = () => {
@@ -128,32 +149,19 @@ export default function TradeWisePage() {
     setConfidenceFilter("All");
     setSortKey("confidenceLevel");
     setSortDirection("desc");
-    // No need to call fetchRecommendations(true) here if we want reset to only apply to filters
-    // If we want reset to also re-fetch, then uncomment the line below
-    // fetchRecommendations(true); 
+    performAnalysis(undefined); // Fetch top N coins on reset
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
     let filtered = [...recommendations];
-
-    // Apply search query first
-    if (searchQuery.trim() !== "") {
-      const lowercasedQuery = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(
-        (rec) =>
-          rec.coin.toLowerCase().includes(lowercasedQuery) ||
-          rec.coinName.toLowerCase().includes(lowercasedQuery)
-      );
-    }
     
-    // Then apply confidence filter
+    // Confidence filter (search filter is now handled by API call)
     if (confidenceFilter !== "All") {
       filtered = filtered.filter(
         (rec) => rec.confidenceLevel.toLowerCase() === confidenceFilter.toLowerCase()
       );
     }
 
-    // Then sort
     const confidenceOrder: { [key: string]: number } = { high: 0, medium: 1, low: 2 };
     const signalOrder: { [key: string]: number } = { buy: 0, hold: 1, sell: 2 };
 
@@ -161,7 +169,7 @@ export default function TradeWisePage() {
       let valA, valB;
       switch (sortKey) {
         case "coin":
-          valA = a.coinName; // Sort by full name for better UX, but display symbol
+          valA = a.coinName;
           valB = b.coinName;
           break;
         case "currentPrice":
@@ -182,7 +190,7 @@ export default function TradeWisePage() {
           break;
         case "confidenceLevel":
           valA = confidenceOrder[a.confidenceLevel.toLowerCase()] ?? 3;
-          valB = confidenceOrder[b.confidenceLevel.toLowerCase()] ?? 3;
+          valB = b.confidenceOrder[b.confidenceLevel.toLowerCase()] ?? 3;
           break;
         default:
           return 0;
@@ -198,7 +206,7 @@ export default function TradeWisePage() {
     });
 
     return filtered;
-  }, [recommendations, searchQuery, confidenceFilter, sortKey, sortDirection]);
+  }, [recommendations, confidenceFilter, sortKey, sortDirection]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -213,7 +221,7 @@ export default function TradeWisePage() {
     <div className="flex flex-col min-h-screen bg-background">
       <TradewiseHeader
         lastUpdated={lastUpdated}
-        onRefresh={() => fetchRecommendations(true)}
+        onRefresh={() => performAnalysis(searchQuery.trim() || undefined)} // Refresh current view (search or top N)
         isRefreshing={isLoading}
       />
       <main className="flex-grow container mx-auto px-4 md:px-8 py-8">
