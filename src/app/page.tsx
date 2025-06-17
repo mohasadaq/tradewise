@@ -190,7 +190,7 @@ export default function TradeWisePage() {
           break;
         case "confidenceLevel":
           valA = confidenceOrder[a.confidenceLevel.toLowerCase()] ?? 3;
-          valB = b.confidenceOrder[b.confidenceLevel.toLowerCase()] ?? 3;
+          valB = confidenceOrder[b.confidenceLevel.toLowerCase()] ?? 3;
           break;
         default:
           return 0;
@@ -264,3 +264,4 @@ export default function TradeWisePage() {
     </div>
   );
 }
+
