@@ -38,7 +38,7 @@ export default function TradeWisePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  const [searchQuery, setSearchQuery] = useState(""); // Will hold comma-separated coin symbols
+  const [searchQuery, setSearchQuery] = useState(""); 
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
   const [sortKey, setSortKey] = useState<SortKey>("confidenceLevel");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -71,10 +71,11 @@ export default function TradeWisePage() {
         setRecommendations([]);
         const message = isSearchingSpecificSymbols ? `No market data found for symbols: ${currentSymbols} (${currentTimeFrame} view). Please check symbols/timeframe.` : `No market data found for top coins (${currentTimeFrame} view).`;
         setError(message);
+        const errorTitle = isAutoRefresh ? "Auto-Refresh: Market Data Error" : "Market Data Error";
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Market Data Error", description: message, variant: "destructive" });
-        } else if (!isAutoRefresh) {
-            toast({ title: "Market Data Error", description: message, variant: "destructive" });
+        } else {
+            toast({ title: errorTitle, description: message, variant: "destructive" });
         }
         setIsLoading(false);
         return;
@@ -86,16 +87,17 @@ export default function TradeWisePage() {
         setRecommendations([]);
         const message = isSearchingSpecificSymbols ? `No non-stablecoin market data found for symbols: ${currentSymbols} (${currentTimeFrame} view).` : `No non-stablecoins found for analysis among top coins (${currentTimeFrame} view).`;
         setError(message);
+        const errorTitle = isAutoRefresh ? "Auto-Refresh: No Coins for Analysis" : "No Coins for Analysis";
         if (fetchToastId) {
           toast({id: fetchToastId, title: "No Coins for Analysis", description: message, variant: "destructive" });
-        } else if (!isAutoRefresh) {
-          toast({ title: "No Coins for Analysis", description: message, variant: "destructive" });
+        } else {
+          toast({ title: errorTitle, description: message, variant: "destructive" });
         }
         setIsLoading(false);
         return;
       }
       
-      if (fetchToastId) {
+      if (fetchToastId) { // Only show "Market Data Fetched" for manual refreshes
         toast({id: fetchToastId, title: "Market Data Fetched", description: `Found ${nonStableMarketData.length} non-stablecoin(s). Starting AI analysis ${timeFrameDescription}...`});
       }
 
@@ -129,30 +131,34 @@ export default function TradeWisePage() {
         setRecommendations(updatedRecommendations);
         setLastUpdated(new Date());
         const successMessage = `Found ${updatedRecommendations.length} recommendations for ${nonStableMarketData.length} non-stablecoin(s) from ${analysisTargetDescription} ${timeFrameDescription}.`;
-        if (fetchToastId) {
+        if (fetchToastId) { // Only show "Analysis Complete" for manual refreshes
             toast({id: fetchToastId, title: "Analysis Complete", description: successMessage });
-        } else if (!isAutoRefresh) {
+        } else if (!isAutoRefresh) { // This case might not be hit often if fetchToastId is always set for manual
             toast({ title: "Analysis Complete", description: successMessage });
         }
       } else {
         setRecommendations([]);
-        setError(`No recommendations found or unexpected response from AI for ${analysisTargetDescription} ${timeFrameDescription}.`);
-        const issueMessage = `No recommendations or unexpected AI response for ${analysisTargetDescription} ${timeFrameDescription}.`;
+        const message = `No recommendations found or unexpected response from AI for ${analysisTargetDescription} ${timeFrameDescription}.`;
+        setError(message);
+        const errorTitle = isAutoRefresh ? "Auto-Refresh: Analysis Issue" : "Analysis Issue";
         if (fetchToastId) {
-            toast({id: fetchToastId, title: "Analysis Issue", description: issueMessage, variant: "destructive" });
-        } else if (!isAutoRefresh) {
-            toast({ title: "Analysis Issue", description: issueMessage, variant: "destructive" });
+            toast({id: fetchToastId, title: "Analysis Issue", description: message, variant: "destructive" });
+        } else {
+            toast({ title: errorTitle, description: message, variant: "destructive" });
         }
       }
     } catch (err) {
       console.error("Error performing analysis:", err);
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-      setError(`Analysis failed for ${analysisTargetDescription} ${timeFrameDescription}: ${errorMessage}`);
+      const fullErrorMessage = `Analysis failed for ${analysisTargetDescription} ${timeFrameDescription}: ${errorMessage}`;
+      setError(fullErrorMessage);
       setRecommendations([]);
+      const errorTitle = isAutoRefresh ? "Auto-Refresh: Analysis Failed" : "Analysis Failed";
+      const toastErrorMessage = isAutoRefresh ? `Auto-refresh: ${errorMessage}`: `Error: ${errorMessage}`;
        if (fetchToastId) {
             toast({id: fetchToastId, title: "Analysis Failed", description: `Error: ${errorMessage}`, variant: "destructive" });
-        } else if (!isAutoRefresh) {
-            toast({ title: "Analysis Failed", description: `Error: ${errorMessage}`, variant: "destructive" });
+        } else {
+            toast({ title: errorTitle, description: toastErrorMessage, variant: "destructive" });
         }
     } finally {
       setIsLoading(false);
@@ -186,12 +192,15 @@ export default function TradeWisePage() {
     let filtered = [...recommendations];
     
     if (searchQuery.trim()) {
-        const lowerCaseQuery = searchQuery.toLowerCase().trim();
-        filtered = filtered.filter(
-            (rec) =>
-            rec.coin.toLowerCase().includes(lowerCaseQuery) ||
-            rec.coinName.toLowerCase().includes(lowerCaseQuery)
-        );
+        const lowerCaseQuerySymbols = searchQuery.toLowerCase().split(',').map(s => s.trim()).filter(s => s);
+        if (lowerCaseQuerySymbols.length > 0) {
+            filtered = filtered.filter(rec =>
+                lowerCaseQuerySymbols.some(querySymbol =>
+                    rec.coin.toLowerCase().includes(querySymbol) ||
+                    rec.coinName.toLowerCase().includes(querySymbol)
+                )
+            );
+        }
     }
     
     if (confidenceFilter !== "All") {
@@ -304,3 +313,4 @@ export default function TradeWisePage() {
     </div>
   );
 }
+
