@@ -25,13 +25,11 @@ const formatPrice = (price: number | undefined | null) => {
   if (typeof price !== 'number' || isNaN(price)) {
     return "N/A";
   }
-  if (price < 0.01 && price > 0) {
-    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumSignificantDigits: 6 });
+   if (price > 0 && price < 0.01) {
+    return price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 5 });
+  } else {
+    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 5 });
   }
-  if (price >= 1 || price === 0) {
-    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 };
 
 const SignalDisplay = ({ signal }: { signal: string }) => {
@@ -133,9 +131,9 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
                           <span className="truncate">{rec.tradingStrategy || "N/A"}</span>
                       </span>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-[250px] bg-popover text-popover-foreground p-2 rounded-md shadow-lg">
+                  <TooltipContent className="max-w-[250px] bg-popover text-popover-foreground p-2 rounded-md shadow-lg whitespace-pre-wrap break-words">
                       <p className="font-semibold mb-1 text-xs">Strategy Details:</p>
-                      <p className="text-xs whitespace-pre-wrap break-words">{rec.tradingStrategy || "Not specified"}</p>
+                      <p className="text-xs">{rec.tradingStrategy || "Not specified"}</p>
                   </TooltipContent>
               </Tooltip>
             </div>
@@ -190,3 +188,4 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
     </TooltipProvider>
   );
 }
+

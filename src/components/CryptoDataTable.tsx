@@ -99,13 +99,15 @@ const formatPrice = (price: number | undefined | null) => {
   if (typeof price !== 'number' || isNaN(price)) {
     return "N/A";
   }
-  if (price < 0.01 && price > 0) {
-    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumSignificantDigits: 6 });
+
+  if (price > 0 && price < 0.01) {
+    // For prices like $0.00123, show actual value up to 5 decimal places
+    return price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 5 });
+  } else {
+    // For $0.00 or prices $0.01 and above (e.g., $0.12, $1.23456)
+    // Show 2 to 5 decimal places
+    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 5 });
   }
-  if (price >= 1 || price === 0) {
-    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 };
 
 export default function CryptoDataTable({ recommendations, sortKey, sortDirection, onSort }: CryptoDataTableProps) {
@@ -194,7 +196,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                                     <span className="truncate max-w-[120px] lg:max-w-[180px]">{rec.tradingStrategy || "N/A"}</span>
                                 </span>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-[200px] sm:max-w-xs bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">
+                            <TooltipContent className="max-w-[200px] sm:max-w-xs bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg whitespace-pre-wrap break-words">
                                 <p className="font-semibold mb-1 text-xs sm:text-sm">Suggested Strategy:</p>
                                 <p className="text-xs sm:text-sm">{rec.tradingStrategy || "Not specified"}</p>
                             </TooltipContent>
@@ -207,9 +209,9 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                             <ShieldAlert className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-[240px] sm:max-w-md bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">
+                        <TooltipContent className="max-w-[240px] sm:max-w-md bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg whitespace-pre-wrap break-words">
                             <p className="font-semibold mb-1 text-xs sm:text-sm">Risk Management:</p>
-                            <p className="text-xs sm:text-sm whitespace-pre-wrap">{rec.riskManagementNotes || "N/A"}</p>
+                            <p className="text-xs sm:text-sm">{rec.riskManagementNotes || "N/A"}</p>
                         </TooltipContent>
                         </Tooltip>
                     </TableCell>
@@ -223,7 +225,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                             <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-[200px] sm:max-w-xs bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">
+                        <TooltipContent className="max-w-[200px] sm:max-w-xs bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg whitespace-pre-wrap break-words">
                             <p className="font-semibold mb-1 text-xs sm:text-sm">Technical Indicators:</p>
                             {rec.technicalIndicators && rec.technicalIndicators.length > 0 ? (
                             <ul className="list-disc list-inside text-xs sm:text-sm space-y-0.5">
@@ -244,9 +246,9 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                             <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-[240px] sm:max-w-md bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">
+                        <TooltipContent className="max-w-[240px] sm:max-w-md bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg whitespace-pre-wrap break-words">
                             <p className="font-semibold mb-1 text-xs sm:text-sm">Order Book Analysis:</p>
-                            <p className="text-xs sm:text-sm whitespace-pre-wrap">{rec.orderBookAnalysis || "N/A"}</p>
+                            <p className="text-xs sm:text-sm">{rec.orderBookAnalysis || "N/A"}</p>
                         </TooltipContent>
                         </Tooltip>
                     </TableCell>
@@ -259,3 +261,4 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     </TooltipProvider>
   );
 }
+
