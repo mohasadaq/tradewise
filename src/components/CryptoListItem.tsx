@@ -135,7 +135,7 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
                   </TooltipTrigger>
                   <TooltipContent className="max-w-[250px] bg-popover text-popover-foreground p-2 rounded-md shadow-lg">
                       <p className="font-semibold mb-1 text-xs">Strategy Details:</p>
-                      <p className="text-xs whitespace-pre-wrap">{rec.tradingStrategy || "Not specified"}</p>
+                      <p className="text-xs whitespace-pre-wrap break-words">{rec.tradingStrategy || "Not specified"}</p>
                   </TooltipContent>
               </Tooltip>
             </div>
@@ -149,7 +149,7 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
                   <span>Technical Indicators</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap">
+              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
                 {rec.technicalIndicators && rec.technicalIndicators.length > 0 ? (
                   <ul className="list-disc list-inside space-y-0.5">
                     {rec.technicalIndicators.map((indicator, idx) => (
@@ -168,7 +168,7 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
                   <span>Order Book Analysis</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap">
+              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
                 <p>{rec.orderBookAnalysis || "N/A"}</p>
               </AccordionContent>
             </AccordionItem>
@@ -179,7 +179,7 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
                   <span>Risk Management</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap">
+              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
                 <p>{rec.riskManagementNotes || "N/A"}</p>
               </AccordionContent>
             </AccordionItem>
