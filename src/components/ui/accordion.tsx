@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -6,7 +7,19 @@ import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Accordion = AccordionPrimitive.Root
+const AccordionRoot = AccordionPrimitive.Root;
+
+const Accordion = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Root>
+>(({ collapsible, ...props }, ref) => (
+  <AccordionRoot
+    ref={ref}
+    collapsible={collapsible}
+    {...props}
+  />
+));
+Accordion.displayName = AccordionPrimitive.Root.displayName
 
 const AccordionItem = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Item>,
