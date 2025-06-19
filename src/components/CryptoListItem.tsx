@@ -141,7 +141,7 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
             </div>
           </div>
 
-          <Accordion type="multiple" className="w-full text-xs" collapsible>
+          <Accordion type="multiple" className="w-full text-xs">
             <AccordionItem value="indicators" className="border-b">
               <AccordionTrigger className="py-2 text-xs hover:no-underline">
                 <div className="flex items-center gap-1.5">
@@ -190,4 +190,3 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
     </TooltipProvider>
   );
 }
-
