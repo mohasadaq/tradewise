@@ -39,25 +39,25 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
   .dark {
-    --background: 240 64% 27%; /* Dark Navy */
+    --background: 240 64% 26.9%; /* Dark Navy (#191970) */
     --foreground: 0 0% 98%; /* White/Light Gray */
     --card: 240 60% 32%; /* Slightly Lighter Navy for Cards */
     --card-foreground: 0 0% 98%;
     --popover: 240 55% 25%; /* Darker Navy for Popovers */
     --popover-foreground: 0 0% 98%;
-    --primary: 210 80% 65%; /* Refined Blue */
-    --primary-foreground: 0 0% 98%; /* White text on Refined Blue */
+    --primary: 183 100% 74.5%; /* Electric Blue (#7DF9FF) */
+    --primary-foreground: 240 10% 10%; /* Dark Navy/Black text for high contrast on Electric Blue */
     --secondary: 240 50% 40%; /* Lighter Navy Variant */
     --secondary-foreground: 0 0% 98%;
     --muted: 240 50% 35%;
     --muted-foreground: 0 0% 75%; /* Lighter muted foreground for better contrast */
-    --accent: 141 53% 55%; /* Emerald Green */
+    --accent: 141 53% 55%; /* Emerald Green (#50C878) */
     --accent-foreground: 0 0% 98%; /* White/Light Gray for text on Emerald Green */
     --destructive: 0 72% 51%; /* Slightly adjusted destructive for better visibility */
     --destructive-foreground: 0 0% 98%;
     --border: 240 50% 45%; /* Visible Border Color */
     --input: 240 50% 45%; /* Input Background */
-    --ring: 210 80% 65%; /* Primary color for rings (matches new primary) */
+    --ring: 183 100% 74.5%; /* Primary color for rings (matches new primary Electric Blue) */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -65,12 +65,12 @@
     --chart-5: 340 75% 55%;
     --sidebar-background: 240 64% 22%;
     --sidebar-foreground: 0 0% 80%;
-    --sidebar-primary: 210 80% 65%; /* Matched to new primary */
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 141 53% 55%;
+    --sidebar-primary: 183 100% 74.5%; /* Matched to new primary Electric Blue */
+    --sidebar-primary-foreground: 240 10% 10%; /* Dark text for Electric Blue sidebar primary */
+    --sidebar-accent: 141 53% 55%; /* Emerald Green */
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 60% 30%;
-    --sidebar-ring: 210 80% 65%; /* Matched to new primary ring */
+    --sidebar-ring: 183 100% 74.5%; /* Matched to new primary ring Electric Blue */
   }
 }
 
