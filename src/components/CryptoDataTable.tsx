@@ -170,14 +170,14 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {recommendations.length === 0 ? (
-                <TableRow>
-                    <TableCell colSpan={tableHeaders.length} className="h-24 text-center text-muted-foreground">
-                    No recommendations available. Try analyzing some coins.
-                    </TableCell>
-                </TableRow>
-                ) : (
-                recommendations.map((rec) => (
+                {recommendations.length === 0 && (
+                  <TableRow>
+                      <TableCell colSpan={tableHeaders.length} className="h-24 text-center text-muted-foreground">
+                      No recommendations available. Try analyzing some coins.
+                      </TableCell>
+                  </TableRow>
+                )}
+                {recommendations.length > 0 && recommendations.map((rec) => (
                     <TableRow key={`${rec.coin}-${rec.coinName}`} className="hover:bg-muted/50">
                     <TableCell className="font-medium px-2 py-2 sm:px-4 sm:py-3 uppercase text-xs sm:text-sm whitespace-nowrap">{rec.coinName} ({rec.coin})</TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.currentPrice)}</TableCell>
@@ -251,8 +251,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                         </Tooltip>
                     </TableCell>
                     </TableRow>
-                ))
-                )}
+                ))}
             </TableBody>
             </Table>
         </div>
@@ -260,4 +259,3 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     </TooltipProvider>
   );
 }
-

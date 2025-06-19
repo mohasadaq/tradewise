@@ -15,7 +15,7 @@ import SkeletonListItem from "./SkeletonListItem";
 
 export default function SkeletonTable({ rows = 3 }: { rows?: number }) {
   const isMobile = useIsMobile();
-  const numColumns = 10; // Updated from 9 to 10
+  const numColumns = 10;
 
   if (isMobile) {
     return (
@@ -27,6 +27,7 @@ export default function SkeletonTable({ rows = 3 }: { rows?: number }) {
     );
   }
 
+  // Desktop view
   return (
     <div className="rounded-lg border shadow-md overflow-hidden bg-card">
       <div className="overflow-x-auto">
@@ -41,24 +42,28 @@ export default function SkeletonTable({ rows = 3 }: { rows?: number }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: rows }).map((_, rowIndex) => (
-              <TableRow key={rowIndex} className="hover:bg-muted/50">
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-12 sm:w-16" /></TableCell>
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-16 sm:w-20" /></TableCell>
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-28" /></TableCell>
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell> {/* Risk Mgt Icon */}
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-7 sm:h-8 w-16 sm:w-20 rounded-full" /></TableCell>
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
-                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
-              </TableRow>
-            ))}
+            {Array.from({ length: rows }).map((_, rowIndex) => {
+              const cells = [
+                <TableCell key={`skel-cell-${rowIndex}-1`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-12 sm:w-16" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-2`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-3`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-4`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-5`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-16 sm:w-20" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-6`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-28" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-7`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-8`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-7 sm:h-8 w-16 sm:w-20 rounded-full" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-9`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-10`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
+              ];
+              return (
+                <TableRow key={rowIndex} className="hover:bg-muted/50">
+                  {cells}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
     </div>
   );
 }
-
