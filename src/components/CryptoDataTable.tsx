@@ -17,14 +17,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, Brain } from "lucide-react";
+import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, Brain, ShieldAlert } from "lucide-react";
 import type { AnalyzeCryptoTradesOutput } from "@/ai/flows/analyze-crypto-trades";
 import type { SortKey, SortDirection } from "./FilterSortControls";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import CryptoListItem from "./CryptoListItem"; // New import
+import CryptoListItem from "./CryptoListItem";
 
-type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { tradingStrategy?: string };
+type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { tradingStrategy?: string; riskManagementNotes?: string; };
 
 interface CryptoDataTableProps {
   recommendations: TradingRecommendation[];
@@ -125,6 +125,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     { key: "exitPrice", label: "Exit Price" },
     { key: "signal", label: "Signal" },
     { key: null, label: "Strategy" },
+    { key: null, label: "Risk Mgt." },
     { key: "confidenceLevel", label: "Confidence" },
     { key: null, label: "Indicators" },
     { key: null, label: "Analysis" },
@@ -199,6 +200,19 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                             </TooltipContent>
                         </Tooltip>
                     </TableCell>
+                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3">
+                        <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7">
+                            <ShieldAlert className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[240px] sm:max-w-md bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">
+                            <p className="font-semibold mb-1 text-xs sm:text-sm">Risk Management:</p>
+                            <p className="text-xs sm:text-sm whitespace-pre-wrap">{rec.riskManagementNotes || "N/A"}</p>
+                        </TooltipContent>
+                        </Tooltip>
+                    </TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
                         <ConfidenceBadge level={rec.confidenceLevel} />
                     </TableCell>
@@ -232,7 +246,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                         </TooltipTrigger>
                         <TooltipContent className="max-w-[240px] sm:max-w-md bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg">
                             <p className="font-semibold mb-1 text-xs sm:text-sm">Order Book Analysis:</p>
-                            <p className="text-xs sm:text-sm">{rec.orderBookAnalysis || "N/A"}</p>
+                            <p className="text-xs sm:text-sm whitespace-pre-wrap">{rec.orderBookAnalysis || "N/A"}</p>
                         </TooltipContent>
                         </Tooltip>
                     </TableCell>
@@ -246,3 +260,4 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     </TooltipProvider>
   );
 }
+

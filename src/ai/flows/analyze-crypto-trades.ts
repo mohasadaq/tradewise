@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview Analyzes crypto coins using technical analysis and provided market data to recommend coins for trading, including entry and exit prices, a trading signal, and a suggested trading strategy.
+ * @fileOverview Analyzes crypto coins using technical analysis and provided market data to recommend coins for trading, including entry and exit prices, a trading signal, a suggested trading strategy, and risk management advice.
  * Considers a specific time frame for price change analysis.
  *
  * - analyzeCryptoTrades - A function that analyzes crypto coins and provides trading recommendations.
@@ -49,6 +49,7 @@ const AnalyzeCryptoTradesOutputSchema = z.object({
         .describe('Key technical indicators supporting the recommendation (e.g., RSI, MACD crossover, Bollinger Bands). These should consider the selected_time_frame and clearly justify the entry/exit prices.'),
       orderBookAnalysis: z.string().describe('Summary of inferred order book analysis or market sentiment, which should also contribute to justifying the entry/exit points.'),
       tradingStrategy: z.string().optional().describe('The suggested trading strategy including its typical duration (e.g., "Day Trade (intra-day, up to 24h)", "Swing Trade (days to weeks)") appropriate for the selected_time_frame and analysis. This strategy should clearly align with the entry/exit prices and the technical conditions that validate them.'),
+      riskManagementNotes: z.string().optional().describe('Key risk management considerations for the trade, such as suggested stop-loss principles, position sizing advice, or volatility warnings. Emphasize responsible trading practices.'),
     })
   ).describe('A list of trading recommendations for the specified crypto coins.'),
 });
@@ -95,11 +96,12 @@ For each coin, provide a professional-level trading analysis:
 8.  'technicalIndicators': A list of 3-5 key technical indicators or chart patterns. Crucially, explain how these specific indicators support your recommended 'entryPrice' and 'exitPrice'. For example, "RSI divergence suggests potential reversal, enter on break of [level]".
 9.  'orderBookAnalysis': A brief summary of inferred order book dynamics or market sentiment. Explain how this analysis, combined with technical indicators, justifies the proposed 'entryPrice' and 'exitPrice' and the overall trading signal. Describe the market conditions (e.g., "buy on confirmation of support at [level]", "sell if momentum fades below [level]") that would validate acting on your recommendations.
 10. 'tradingStrategy': Based on the 'selected_time_frame' (e.g., '1h', '24h', '7d', '30d') and your overall analysis, suggest an appropriate trading strategy. This strategy description MUST include a typical holding period or duration relevant to the selected_time_frame. Examples: "Scalping (minutes to few hours)" for 1h; "Day Trade (intra-day, up to 24h)" for 24h; "Swing Trade (days to a few weeks)" for 7d; "Longer Swing Trade / Position Entry (weeks to months)" for 30d. The strategy, its duration, and the entry/exit prices must be coherently justified by your technical and market sentiment analysis.
+11. 'riskManagementNotes': Provide concise and actionable risk management advice specific to this trade. This could include principles for setting a stop-loss (e.g., "Consider a stop-loss below key support level [X] or if price drops by Y% from entry"), general advice on position sizing (e.g., "Due to observed volatility, consider a smaller position size, e.g., 1-2% of trading capital"), and any specific risks (e.g., "High correlation with BTC movements, monitor BTC price action"). Emphasize responsible trading practices like not risking more than one can afford to lose.
 
 Format your entire response as a single JSON object matching the output schema, containing a 'tradingRecommendations' array. Each object in the array must pertain to one of the analyzed coins.
-Ensure all fields in the output schema are populated, including 'tradingStrategy'. If a value cannot be determined, use null where appropriate for number fields, or a descriptive string like "N/A" for string fields if absolutely necessary.
+Ensure all fields in the output schema are populated, including 'tradingStrategy' and 'riskManagementNotes'. If a value cannot be determined, use null where appropriate for number fields, or a descriptive string like "N/A" for string fields if absolutely necessary.
 Double-check that the 'coin' symbol and 'coinName' in your output exactly match the 'symbol' and 'name' provided in the input for each respective coin.
-Your overall goal is to provide clear, actionable, and well-justified trading advice, akin to what a professional trader would offer, considering the specific time frame of the analysis.
+Your overall goal is to provide clear, actionable, and well-justified trading advice, akin to what a professional trader would offer, considering the specific time frame of the analysis and including robust risk management principles.
 `,
 });
 
@@ -118,7 +120,7 @@ const analyzeCryptoTradesFlow = ai.defineFlow(
         console.error("AI analysis returned no output.");
         return { tradingRecommendations: [] };
     }
-    // Ensure the output structure is as expected, especially currentPrice and coinName
+    // Ensure the output structure is as expected
     const validatedRecommendations = output.tradingRecommendations.map(rec => {
         const originalCoinData = input.coinsData.find(
           cd => cd.symbol.toLowerCase() === rec.coin.toLowerCase() || cd.name.toLowerCase() === rec.coinName.toLowerCase()
@@ -128,6 +130,7 @@ const analyzeCryptoTradesFlow = ai.defineFlow(
             currentPrice: originalCoinData?.current_price ?? rec.currentPrice ?? null,
             coinName: originalCoinData?.name ?? rec.coinName, // Prioritize input name
             tradingStrategy: rec.tradingStrategy || "N/A", // Ensure tradingStrategy has a fallback
+            riskManagementNotes: rec.riskManagementNotes || "N/A", // Ensure riskManagementNotes has a fallback
         };
     });
 

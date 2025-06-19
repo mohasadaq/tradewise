@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SkeletonListItem() {
@@ -16,31 +16,38 @@ export default function SkeletonListItem() {
           <Skeleton className="h-6 w-20 rounded-full" /> {/* Confidence Badge */}
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-3 grid grid-cols-2 gap-x-3 gap-y-2">
-        <div className="col-span-2 sm:col-span-1">
-          <Skeleton className="h-3 w-20 mb-1" /> {/* Label */}
-          <Skeleton className="h-5 w-24" />     {/* Value Current Price */}
-        </div>
-        <div className="col-span-1">
-          <Skeleton className="h-3 w-16 mb-1" /> {/* Label */}
-          <Skeleton className="h-5 w-20" />     {/* Value Entry Price */}
-        </div>
-        <div className="col-span-1">
-          <Skeleton className="h-3 w-16 mb-1" /> {/* Label */}
-          <Skeleton className="h-5 w-20" />     {/* Value Exit Price */}
-        </div>
-        <div className="col-span-2">
-            <Skeleton className="h-3 w-24 mb-1" /> {/* Label */}
-            <div className="flex items-center gap-1">
-                <Skeleton className="h-4 w-4 rounded-sm" /> {/* Icon */}
-                <Skeleton className="h-4 w-32" />          {/* Strategy Text */}
+      <CardContent className="px-4 pb-4 text-sm space-y-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+            <div className="col-span-2 sm:col-span-1">
+            <Skeleton className="h-3 w-20 mb-1" /> {/* Label */}
+            <Skeleton className="h-5 w-24" />     {/* Value Current Price */}
+            </div>
+            <div className="col-span-1">
+            <Skeleton className="h-3 w-16 mb-1" /> {/* Label */}
+            <Skeleton className="h-5 w-20" />     {/* Value Entry Price */}
+            </div>
+            <div className="col-span-1">
+            <Skeleton className="h-3 w-16 mb-1" /> {/* Label */}
+            <Skeleton className="h-5 w-20" />     {/* Value Exit Price */}
+            </div>
+            <div className="col-span-2">
+                <Skeleton className="h-3 w-24 mb-1" /> {/* Label */}
+                <div className="flex items-center gap-1">
+                    <Skeleton className="h-4 w-4 rounded-sm" /> {/* Icon */}
+                    <Skeleton className="h-4 w-32" />          {/* Strategy Text */}
+                </div>
             </div>
         </div>
+        
+        {/* Accordion Skeletons */}
+        <div className="space-y-2 pt-2 border-t mt-3">
+            <Skeleton className="h-5 w-1/2 mt-2" /> {/* Indicators Trigger */}
+            <Skeleton className="h-5 w-1/2" /> {/* Analysis Trigger */}
+            <Skeleton className="h-5 w-1/2" /> {/* Risk Management Trigger */}
+        </div>
       </CardContent>
-      <CardFooter className="px-4 py-3 border-t flex justify-end space-x-2">
-        <Skeleton className="h-7 w-7 rounded-md" /> {/* Info Button */}
-        <Skeleton className="h-7 w-7 rounded-md" /> {/* Info Button */}
-      </CardFooter>
+      {/* CardFooter was removed, so skeleton for footer is also removed */}
     </Card>
   );
 }
+

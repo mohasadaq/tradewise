@@ -11,11 +11,11 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
-import SkeletonListItem from "./SkeletonListItem"; // New import
+import SkeletonListItem from "./SkeletonListItem";
 
-export default function SkeletonTable({ rows = 3 }: { rows?: number }) { // Default to 3 for mobile list
+export default function SkeletonTable({ rows = 3 }: { rows?: number }) {
   const isMobile = useIsMobile();
-  const numColumns = 9;
+  const numColumns = 10; // Updated from 9 to 10
 
   if (isMobile) {
     return (
@@ -41,7 +41,7 @@ export default function SkeletonTable({ rows = 3 }: { rows?: number }) { // Defa
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: rows }).map((_, rowIndex) => ( // Use same rows prop for desktop
+            {Array.from({ length: rows }).map((_, rowIndex) => (
               <TableRow key={rowIndex} className="hover:bg-muted/50">
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-12 sm:w-16" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>
@@ -49,6 +49,7 @@ export default function SkeletonTable({ rows = 3 }: { rows?: number }) { // Defa
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-16 sm:w-20" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-28" /></TableCell>
+                <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell> {/* Risk Mgt Icon */}
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-7 sm:h-8 w-16 sm:w-20 rounded-full" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
                 <TableCell className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
@@ -60,3 +61,4 @@ export default function SkeletonTable({ rows = 3 }: { rows?: number }) { // Defa
     </div>
   );
 }
+

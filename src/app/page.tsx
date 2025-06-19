@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
-type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { coinName: string; tradingStrategy?: string };
+type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { coinName: string; tradingStrategy?: string; riskManagementNotes?: string; };
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
 const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
@@ -38,7 +38,7 @@ export default function TradeWisePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  const [searchQuery, setSearchQuery] = useState(""); 
+  const [searchQuery, setSearchQuery] = useState("");
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
   const [sortKey, setSortKey] = useState<SortKey>("confidenceLevel");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -96,7 +96,7 @@ export default function TradeWisePage() {
         setIsLoading(false);
         return;
       }
-      
+
       if (fetchToastId) { // Only show "Market Data Fetched" for manual refreshes
         toast({id: fetchToastId, title: "Market Data Fetched", description: `Found ${nonStableMarketData.length} non-stablecoin(s). Starting AI analysis ${timeFrameDescription}...`});
       }
@@ -113,7 +113,7 @@ export default function TradeWisePage() {
       }));
 
       const input = { coinsData: aiInputData };
-      
+
       const result = await analyzeCryptoTrades(input);
 
       if (result && result.tradingRecommendations) {
@@ -126,6 +126,7 @@ export default function TradeWisePage() {
             currentPrice: matchedMarketData?.current_price ?? rec.currentPrice,
             coinName: matchedMarketData?.name ?? rec.coinName,
             tradingStrategy: rec.tradingStrategy || "N/A",
+            riskManagementNotes: rec.riskManagementNotes || "N/A",
           };
         });
         setRecommendations(updatedRecommendations);
@@ -166,31 +167,31 @@ export default function TradeWisePage() {
   }, [toast, selectedTimeFrame]);
 
   useEffect(() => {
-    performAnalysis(undefined, DEFAULT_TIME_FRAME, true); 
+    performAnalysis(undefined, DEFAULT_TIME_FRAME, true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []);
 
   useEffect(() => {
     const intervalId = setInterval(() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame, true), REFRESH_INTERVAL);
     return () => clearInterval(intervalId);
-  }, [performAnalysis, searchQuery, selectedTimeFrame]); 
+  }, [performAnalysis, searchQuery, selectedTimeFrame]);
 
   const handleAnalyzeCoins = () => {
     performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame);
   };
-  
+
   const handleResetFilters = () => {
     setSearchQuery("");
     setConfidenceFilter("All");
     setSortKey("confidenceLevel");
     setSortDirection("desc");
     setSelectedTimeFrame(DEFAULT_TIME_FRAME);
-    performAnalysis(undefined, DEFAULT_TIME_FRAME); 
+    performAnalysis(undefined, DEFAULT_TIME_FRAME);
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
     let filtered = [...recommendations];
-    
+
     if (searchQuery.trim()) {
         const lowerCaseQuerySymbols = searchQuery.toLowerCase().split(',').map(s => s.trim()).filter(s => s);
         if (lowerCaseQuerySymbols.length > 0) {
@@ -202,7 +203,7 @@ export default function TradeWisePage() {
             );
         }
     }
-    
+
     if (confidenceFilter !== "All") {
       filtered = filtered.filter(
         (rec) => rec.confidenceLevel.toLowerCase() === confidenceFilter.toLowerCase()

@@ -11,10 +11,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText } from "lucide-react";
+import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { tradingStrategy?: string };
+type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { tradingStrategy?: string; riskManagementNotes?: string; };
 
 interface CryptoListItemProps {
   recommendation: TradingRecommendation;
@@ -135,21 +135,21 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
                   </TooltipTrigger>
                   <TooltipContent className="max-w-[250px] bg-popover text-popover-foreground p-2 rounded-md shadow-lg">
                       <p className="font-semibold mb-1 text-xs">Strategy Details:</p>
-                      <p className="text-xs">{rec.tradingStrategy || "Not specified"}</p>
+                      <p className="text-xs whitespace-pre-wrap">{rec.tradingStrategy || "Not specified"}</p>
                   </TooltipContent>
               </Tooltip>
             </div>
           </div>
 
           <Accordion type="multiple" className="w-full text-xs" collapsible>
-            <AccordionItem value="indicators" className="border-b-0">
+            <AccordionItem value="indicators" className="border-b">
               <AccordionTrigger className="py-2 text-xs hover:no-underline">
                 <div className="flex items-center gap-1.5">
                   <ListChecks className="h-3.5 w-3.5 text-primary/90" />
                   <span>Technical Indicators</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground">
+              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap">
                 {rec.technicalIndicators && rec.technicalIndicators.length > 0 ? (
                   <ul className="list-disc list-inside space-y-0.5">
                     {rec.technicalIndicators.map((indicator, idx) => (
@@ -161,21 +161,31 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
                 )}
               </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="analysis" className="border-b-0">
+            <AccordionItem value="analysis" className="border-b">
               <AccordionTrigger className="py-2 text-xs hover:no-underline">
                  <div className="flex items-center gap-1.5">
                   <FileText className="h-3.5 w-3.5 text-primary/90" />
                   <span>Order Book Analysis</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground">
+              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap">
                 <p>{rec.orderBookAnalysis || "N/A"}</p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="risk-management" className="border-b-0">
+              <AccordionTrigger className="py-2 text-xs hover:no-underline">
+                <div className="flex items-center gap-1.5">
+                  <ShieldAlert className="h-3.5 w-3.5 text-primary/90" />
+                  <span>Risk Management</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap">
+                <p>{rec.riskManagementNotes || "N/A"}</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
 
         </CardContent>
-        {/* CardFooter is removed as its content is now in the accordion */}
       </Card>
     </TooltipProvider>
   );
