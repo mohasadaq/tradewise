@@ -73,7 +73,7 @@ const MobileTradeLogItem = ({ trade, coinSymbol }: { trade: TradeLogEntry, coinS
         </div>
         <div className="mt-1">
           <span className="text-muted-foreground">Reason:</span>
-          <p className="font-medium text-foreground whitespace-pre-wrap break-words text-[0.7rem] leading-snug">{trade.reason}</p>
+          <p className="font-medium text-foreground whitespace-pre-wrap break-words text-xs leading-snug">{trade.reason}</p>
         </div>
       </CardContent>
     </Card>
@@ -190,7 +190,7 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
                       <TableHead className="text-right">Quantity</TableHead>
                       <TableHead className="text-right">Cash After</TableHead>
                       <TableHead className="text-right">Coins Held</TableHead>
-                      <TableHead className="min-w-[300px] sm:min-w-[350px] text-left">Reason</TableHead>
+                      <TableHead className="min-w-[350px] sm:min-w-[400px] text-left">Reason</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
