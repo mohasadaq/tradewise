@@ -64,8 +64,8 @@ export default function FilterSortControls({
 }: FilterSortControlsProps) {
   return (
     <div className="p-3 sm:p-4 bg-card rounded-lg shadow mb-4 sm:mb-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 items-end">
-        <div className="lg:col-span-1 sm:col-span-2 xl:col-span-1 space-y-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 items-end">
+        <div className="md:col-span-2 lg:col-span-1 xl:col-span-1 space-y-1">
           <p className="text-sm font-medium text-foreground">Analysis Scope & Filters</p>
           <p className="text-xs text-muted-foreground hidden sm:block">
             Enter symbols (e.g. btc,eth) for specific analysis. Blank analyzes top coins. Stablecoins excluded.
@@ -123,7 +123,7 @@ export default function FilterSortControls({
           </Select>
         </div>
         
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:col-span-2 lg:col-span-1 xl:col-span-1">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:col-span-2 lg:col-span-1 xl:col-span-1">
             <div className="space-y-1">
                 <Label htmlFor="sortKey" className="text-xs sm:text-sm">Sort By</Label>
                 <Select

@@ -13,8 +13,8 @@ interface DashboardControlsProps {
 
 export default function DashboardControls({ lastUpdated, onRefresh, isRefreshing }: DashboardControlsProps) {
   return (
-    <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-card rounded-lg shadow flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-3">
-      <h2 className="text-lg sm:text-xl font-semibold text-foreground">AI Analysis Dashboard</h2>
+    <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-card rounded-lg shadow flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+      <h2 className="text-lg sm:text-xl font-semibold text-foreground text-center sm:text-left">AI Analysis Dashboard</h2>
       <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
         <ClientOnly fallback={<span className="text-xs text-muted-foreground self-center sm:self-auto">Loading...</span>}>
           {lastUpdated && (
@@ -29,11 +29,10 @@ export default function DashboardControls({ lastUpdated, onRefresh, isRefreshing
           onClick={onRefresh}
           disabled={isRefreshing}
           aria-label="Refresh Data"
-          className="h-9 w-full sm:w-auto"
+          className="h-9 w-full sm:w-auto text-xs sm:text-sm"
         >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          <span className="ml-2 sm:hidden">{isRefreshing ? "..." : "Refresh"}</span>
-          <span className="ml-2 hidden sm:inline">{isRefreshing ? "Refreshing..." : "Refresh Analysis"}</span>
+          <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          <span className="ml-2">{isRefreshing ? "Refreshing..." : "Refresh Analysis"}</span>
         </Button>
       </div>
     </div>

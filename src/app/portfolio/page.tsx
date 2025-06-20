@@ -159,7 +159,7 @@ export default function PortfolioPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh_-_var(--header-height)_-_var(--footer-height))]">
-      <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
+      <main className="flex-grow container mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Portfolio</h1>
           {/* AddHoldingDialog is now triggered by individual coin actions from dashboard, or contextually if needed elsewhere. 

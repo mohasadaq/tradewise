@@ -96,7 +96,7 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
       className = "bg-muted text-muted-foreground";
   }
   return (
-    <Badge variant={variant} className={`capitalize ${className} flex items-center gap-1 text-xs px-2 py-0.5`}>
+    <Badge variant={variant} className={`capitalize ${className} flex items-center gap-1 text-xs px-2 py-1`}>
       <IconComponent className="h-3 w-3" />
       {level || "N/A"}
     </Badge>
@@ -116,11 +116,11 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
 
   return (
     <TooltipProvider>
-      <Card className="mb-4 shadow-md bg-card">
-        <CardHeader className="pb-3 pt-4 px-4">
+      <Card className="mb-3 sm:mb-4 shadow-md bg-card">
+        <CardHeader className="pb-3 pt-4 px-3 sm:px-4">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-lg font-semibold">{rec.coinName} ({rec.coin.toUpperCase()})</CardTitle>
+              <CardTitle className="text-base sm:text-lg font-semibold">{rec.coinName} ({rec.coin.toUpperCase()})</CardTitle>
               <CardDescription className="text-xs">
                 <SignalDisplay signal={rec.signal} />
               </CardDescription>
@@ -128,23 +128,23 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
             <ConfidenceBadge level={rec.confidenceLevel} />
           </div>
         </CardHeader>
-        <CardContent className="px-4 pb-3 text-sm space-y-3">
-          <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+        <CardContent className="px-3 sm:px-4 pb-3 text-sm space-y-3">
+          <div className="grid grid-cols-3 gap-x-2 sm:gap-x-3 gap-y-2">
             <div>
               <p className="text-muted-foreground text-xs">Current Price:</p>
-              <p className="font-medium">${formatPrice(rec.currentPrice)}</p>
+              <p className="font-medium text-xs sm:text-sm">${formatPrice(rec.currentPrice)}</p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Entry Price:</p>
-              <p className="font-medium">${formatPrice(rec.entryPrice)}</p>
+              <p className="font-medium text-xs sm:text-sm">${formatPrice(rec.entryPrice)}</p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Exit Price:</p>
-              <p className="font-medium">${formatPrice(rec.exitPrice)}</p>
+              <p className="font-medium text-xs sm:text-sm">${formatPrice(rec.exitPrice)}</p>
             </div>
             <div className="col-span-3">
               <p className="text-muted-foreground text-xs">Potential G/L:</p>
-              <p className={cn("font-medium", gainLossColor)}>
+              <p className={cn("font-medium text-xs sm:text-sm", gainLossColor)}>
                 {potentialGainLoss !== null ? (potentialGainLoss > 0 ? "+" : "") + formatPrice(potentialGainLoss) : "N/A"}
               </p>
             </div>
@@ -216,27 +216,27 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
             </AccordionItem>
           </Accordion>
         </CardContent>
-        <CardFooter className="px-4 pb-3 pt-2 border-t flex items-center gap-2">
+        <CardFooter className="px-3 sm:px-4 pb-3 pt-2 border-t flex flex-col sm:flex-row items-center gap-2">
             <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1"
+                className="w-full sm:flex-1 text-xs sm:text-sm h-9"
                 onClick={() => onAddToPortfolio(rec)}
                 disabled={!isAddingToPortfolioPossible || !rec.id || !rec.symbol}
                 aria-label="Add to portfolio"
             >
-                {!isAddingToPortfolioPossible ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusSquare className="mr-2 h-4 w-4" />}
+                {!isAddingToPortfolioPossible ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusSquare className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                 Add to Portfolio
             </Button>
             <Button
                 variant="outline"
                 size="sm"
-                className="flex-1"
+                className="w-full sm:flex-1 text-xs sm:text-sm h-9"
                 onClick={() => onInitiateBacktest(rec)}
                 disabled={!rec.id || !rec.symbol}
                 aria-label="Backtest this coin"
             >
-                <TestTube2 className="mr-2 h-4 w-4" />
+                <TestTube2 className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Backtest
             </Button>
         </CardFooter>

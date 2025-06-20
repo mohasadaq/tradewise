@@ -44,45 +44,45 @@ export default function PortfolioSummaryCard({
 
   return (
     <Card className="mb-6 shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-2xl">Portfolio Overview</CardTitle>
+      <CardHeader className="px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-4">
+        <CardTitle className="text-xl sm:text-2xl">Portfolio Overview</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-          <div className="p-4 bg-card rounded-lg border">
-            <div className="flex items-center text-muted-foreground mb-1">
-              <DollarSign className="h-4 w-4 mr-2" />
+      <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm">
+          <div className="p-3 sm:p-4 bg-card rounded-lg border">
+            <div className="flex items-center text-muted-foreground mb-1 text-xs sm:text-sm">
+              <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Total Current Value
             </div>
-            {isLoading ? <Skeleton className="h-7 w-3/4" /> : 
-            <p className="text-2xl font-semibold">{formatCurrency(totalValue)}</p>}
+            {isLoading ? <Skeleton className="h-6 w-3/4 sm:h-7" /> : 
+            <p className="text-xl sm:text-2xl font-semibold">{formatCurrency(totalValue)}</p>}
           </div>
 
-          <div className="p-4 bg-card rounded-lg border">
-            <div className="flex items-center text-muted-foreground mb-1">
-                <PieChart className="h-4 w-4 mr-2" />
+          <div className="p-3 sm:p-4 bg-card rounded-lg border">
+            <div className="flex items-center text-muted-foreground mb-1 text-xs sm:text-sm">
+                <PieChart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 Total Cost Basis
             </div>
-            {isLoading ? <Skeleton className="h-7 w-3/4" /> :
-            <p className="text-2xl font-semibold">{formatCurrency(totalCost)}</p>}
+            {isLoading ? <Skeleton className="h-6 w-3/4 sm:h-7" /> :
+            <p className="text-xl sm:text-2xl font-semibold">{formatCurrency(totalCost)}</p>}
           </div>
           
-          <div className="p-4 bg-card rounded-lg border">
-            <div className="flex items-center text-muted-foreground mb-1">
-               <ProfitLossIcon className={cn("h-4 w-4 mr-2", plColor)} />
+          <div className="p-3 sm:p-4 bg-card rounded-lg border">
+            <div className="flex items-center text-muted-foreground mb-1 text-xs sm:text-sm">
+               <ProfitLossIcon className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2", plColor)} />
                 Total Profit/Loss
             </div>
-             {isLoading ? <Skeleton className="h-7 w-3/4" /> :
-            <p className={cn("text-2xl font-semibold", plColor)}>{totalProfitLoss != null && totalProfitLoss > 0 ? "+" : ""}{formatCurrency(totalProfitLoss)}</p>}
+             {isLoading ? <Skeleton className="h-6 w-3/4 sm:h-7" /> :
+            <p className={cn("text-xl sm:text-2xl font-semibold", plColor)}>{totalProfitLoss != null && totalProfitLoss > 0 ? "+" : ""}{formatCurrency(totalProfitLoss)}</p>}
           </div>
 
-          <div className="p-4 bg-card rounded-lg border">
-            <div className="flex items-center text-muted-foreground mb-1">
-                 <Activity className="h-4 w-4 mr-2" />
+          <div className="p-3 sm:p-4 bg-card rounded-lg border">
+            <div className="flex items-center text-muted-foreground mb-1 text-xs sm:text-sm">
+                 <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                  Total P/L %
             </div>
-            {isLoading ? <Skeleton className="h-7 w-1/2" /> :
-            <p className={cn("text-2xl font-semibold", plColor)}>{totalProfitLossPercentage != null && totalProfitLossPercentage > 0 ? "+" : ""}{formatPercentage(totalProfitLossPercentage)}</p>}
+            {isLoading ? <Skeleton className="h-6 w-1/2 sm:h-7" /> :
+            <p className={cn("text-xl sm:text-2xl font-semibold", plColor)}>{totalProfitLossPercentage != null && totalProfitLossPercentage > 0 ? "+" : ""}{formatPercentage(totalProfitLossPercentage)}</p>}
           </div>
         </div>
       </CardContent>
