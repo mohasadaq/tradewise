@@ -61,13 +61,10 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
                    : buyAndHoldProfitLossPercentage < 0 ? "text-destructive"
                    : "text-foreground";
 
-  // Determine if this was an AI recommendation backtest or MA crossover
   const isAIRecommendationTest = config.aiSignal !== undefined;
   const titleText = isAIRecommendationTest 
     ? `Backtest Results: AI Recommendation for ${coinSymbol.toUpperCase()}`
-    : `Backtest Results: MA Crossover for ${coinSymbol.toUpperCase()}`;
-    // The MA part of title will be removed if config no longer holds MA periods.
-    // : `Backtest Results: MA Crossover for ${coinSymbol.toUpperCase()} (${config.shortMAPeriod}/${config.longMAPeriod} MA)`;
+    : `Backtest Results for ${coinSymbol.toUpperCase()}`;
 
 
   return (
@@ -134,8 +131,10 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
           <div>
             <h3 className="text-lg font-semibold mb-3">Trade Log (Strategy)</h3>
             <ScrollArea className="h-[300px] w-full rounded-md border">
-              <Table>
-                <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+              {/* The Table component from shadcn/ui already wraps the table in a div with overflow-auto.
+                  Adding min-w-max to the table itself ensures it can grow as needed. */}
+              <Table className="min-w-[max-content]">
+                <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                   <TableRow>
                     <TableHead className="w-[130px]">Date</TableHead>
                     <TableHead>Type</TableHead>
@@ -143,7 +142,7 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
                     <TableHead className="text-right">Quantity</TableHead>
                     <TableHead className="text-right">Cash After</TableHead>
                     <TableHead className="text-right">Coins Held</TableHead>
-                    <TableHead className="min-w-[200px]">Reason</TableHead>
+                    <TableHead className="min-w-[250px] sm:min-w-[300px]">Reason</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -174,3 +173,4 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
     </Card>
   );
 }
+
