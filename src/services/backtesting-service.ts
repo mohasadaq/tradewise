@@ -23,7 +23,7 @@ export function runMACrossoverBacktest(
   const { initialCapital, shortMAPeriod, longMAPeriod } = config;
 
   if (historicalData.length < longMAPeriod) {
-    throw new Error("Not enough historical data for the selected Long MA period.");
+    throw new Error("Not enough historical data for the selected Long MA period. Try using a wider date range or a shorter MA period.");
   }
 
   const prices = historicalData.map(p => p.price);
