@@ -147,24 +147,20 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
                 {potentialGainLoss !== null ? (potentialGainLoss > 0 ? "+" : "") + formatPrice(potentialGainLoss) : "N/A"}
               </p>
             </div>
-            <div className="col-span-3">
-              <p className="text-muted-foreground text-xs mb-0.5">Suggested Strategy:</p>
-              <Tooltip delayDuration={100}>
-                  <TooltipTrigger asChild>
-                      <span className="flex items-center gap-1 cursor-default text-xs p-1 -ml-1 rounded-sm hover:bg-muted">
-                          <Brain className="h-3.5 w-3.5 text-primary/80 shrink-0" />
-                          <span className="truncate break-words">{rec.tradingStrategy || "N/A"}</span>
-                      </span>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[250px] bg-popover text-popover-foreground p-2 rounded-md shadow-lg whitespace-pre-wrap break-words">
-                      <p className="font-semibold mb-1 text-xs">Strategy Details:</p>
-                      <p className="text-xs">{rec.tradingStrategy || "Not specified"}</p>
-                  </TooltipContent>
-              </Tooltip>
-            </div>
           </div>
 
           <Accordion type="multiple" className="w-full text-xs">
+            <AccordionItem value="strategy" className="border-b">
+                <AccordionTrigger className="py-2 text-xs hover:no-underline">
+                    <div className="flex items-center gap-1.5">
+                        <Brain className="h-3.5 w-3.5 text-primary/90" />
+                        <span>Suggested Strategy</span>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
+                    <p>{rec.tradingStrategy || "N/A"}</p>
+                </AccordionContent>
+            </AccordionItem>
             <AccordionItem value="timeframe-context" className="border-b">
               <AccordionTrigger className="py-2 text-xs hover:no-underline">
                 <div className="flex items-center gap-1.5">
