@@ -17,12 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import type { ReactNode } from 'react';
 
 interface PortfolioTableProps {
   holdings: EnrichedPortfolioHolding[];
   onRemoveHolding: (holdingId: string) => void;
-  isLoadingMarketData: boolean; // Specifically for loading market-dependent data (prices, values)
+  isLoadingMarketData: boolean;
   onRefresh: () => void;
 }
 
@@ -43,17 +44,15 @@ const formatPercentage = (percentage: number | undefined | null) => {
   return `${percentage.toFixed(2)}%`;
 };
 
-export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMarketData, onRefresh }: PortfolioTableProps) {
-
-  const renderSkeletonCellsForHolding = (keyPrefix: string): React.ReactNode[] => [
-    <TableCell key={`${keyPrefix}-skel-cp`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>, {/* Current Price */}
-    <TableCell key={`${keyPrefix}-skel-tc`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>, {/* Total Cost */}
-    <TableCell key={`${keyPrefix}-skel-cv`} className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>, {/* Current Value */}
-    <TableCell key={`${keyPrefix}-skel-pl`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>, {/* P/L Amount */}
-    <TableCell key={`${keyPrefix}-skel-plp`} className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell> {/* P/L Percent */}
-  ];
+const renderSkeletonCellsForHolding = (keyPrefix: string): ReactNode[] => [
+    <TableCell key={`${keyPrefix}-skel-cp`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>,
+    <TableCell key={`${keyPrefix}-skel-tc`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>,
+    <TableCell key={`${keyPrefix}-skel-cv`} className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>,
+    <TableCell key={`${keyPrefix}-skel-pl`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>,
+    <TableCell key={`${keyPrefix}-skel-plp`} className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+];
   
-  const renderValueCellsForHolding = (holding: EnrichedPortfolioHolding): React.ReactNode[] => {
+const renderValueCellsForHolding = (holding: EnrichedPortfolioHolding): ReactNode[] => {
     const plColor = holding.profitLoss == null ? "text-foreground" 
                    : holding.profitLoss > 0 ? "text-accent" 
                    : holding.profitLoss < 0 ? "text-destructive" 
@@ -69,11 +68,13 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
         {(holding.profitLossPercentage != null && holding.profitLossPercentage > 0 ? "+" : "") + `${formatPercentage(holding.profitLossPercentage)}`}
       </TableCell>
     ];
-  };
+};
 
-  const renderSkeletonRowsForInitialLoad = (count: number) => {
+export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMarketData, onRefresh }: PortfolioTableProps) {
+
+  const renderSkeletonRowsForInitialLoad = (count: number): ReactNode[] => {
     return Array.from({ length: count }).map((_, index) => {
-      const staticSkeletonCells: React.ReactNode[] = [
+      const staticSkeletonCells: ReactNode[] = [
         <TableCell key={`skel-initial-${index}-name`}><Skeleton className="h-5 w-24" /></TableCell>,
         <TableCell key={`skel-initial-${index}-symbol`}><Skeleton className="h-5 w-12" /></TableCell>,
         <TableCell key={`skel-initial-${index}-qty`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>,
