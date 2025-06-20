@@ -39,15 +39,13 @@ export default function SkeletonListItem() {
             </div>
         </div>
         
-        {/* Accordion Skeletons */}
         <div className="space-y-2 pt-2 border-t mt-3">
-            <Skeleton className="h-5 w-1/2 mt-2" /> {/* Indicators Trigger */}
+            <Skeleton className="h-5 w-1/2 mt-2" /> {/* Time Frame Context Trigger */}
+            <Skeleton className="h-5 w-1/2" /> {/* Indicators Trigger */}
             <Skeleton className="h-5 w-1/2" /> {/* Analysis Trigger */}
             <Skeleton className="h-5 w-1/2" /> {/* Risk Management Trigger */}
         </div>
       </CardContent>
-      {/* CardFooter was removed, so skeleton for footer is also removed */}
     </Card>
   );
 }
-

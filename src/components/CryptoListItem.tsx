@@ -11,16 +11,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText, ShieldAlert } from "lucide-react";
+import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText, ShieldAlert, ClockIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { tradingStrategy?: string; riskManagementNotes?: string; };
+type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
+  tradingStrategy?: string; 
+  riskManagementNotes?: string;
+  timeFrameAnalysisContext?: string;
+};
 
 interface CryptoListItemProps {
   recommendation: TradingRecommendation;
 }
 
-// Re-using or adapting from CryptoDataTable
 const formatPrice = (price: number | undefined | null) => {
   if (typeof price !== 'number' || isNaN(price)) {
     return "N/A";
@@ -128,7 +131,7 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
                   <TooltipTrigger asChild>
                       <span className="flex items-center gap-1 cursor-default text-xs p-1 -ml-1 rounded-sm hover:bg-muted">
                           <Brain className="h-3.5 w-3.5 text-primary/80 shrink-0" />
-                          <span className="truncate">{rec.tradingStrategy || "N/A"}</span>
+                          <span className="truncate break-words">{rec.tradingStrategy || "N/A"}</span>
                       </span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-[250px] bg-popover text-popover-foreground p-2 rounded-md shadow-lg whitespace-pre-wrap break-words">
@@ -140,6 +143,17 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
           </div>
 
           <Accordion type="multiple" className="w-full text-xs">
+            <AccordionItem value="timeframe-context" className="border-b">
+              <AccordionTrigger className="py-2 text-xs hover:no-underline">
+                <div className="flex items-center gap-1.5">
+                  <ClockIcon className="h-3.5 w-3.5 text-primary/90" />
+                  <span>Time Frame Context</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
+                <p>{rec.timeFrameAnalysisContext || "N/A"}</p>
+              </AccordionContent>
+            </AccordionItem>
             <AccordionItem value="indicators" className="border-b">
               <AccordionTrigger className="py-2 text-xs hover:no-underline">
                 <div className="flex items-center gap-1.5">
@@ -182,10 +196,8 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-
         </CardContent>
       </Card>
     </TooltipProvider>
   );
 }
-

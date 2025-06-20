@@ -6,6 +6,35 @@
 
 import { z } from 'zod';
 
+// Time frames we offer in the UI and pass to AI. These are the values used in FilterSortControls.
+// This constant is now internal to this module. The AppTimeFrame type is exported.
+const APP_SUPPORTED_TIME_FRAMES = ["15m", "30m", "1h", "4h", "12h", "24h", "7d", "30d"] as const;
+export type AppTimeFrame = typeof APP_SUPPORTED_TIME_FRAMES[number];
+
+// Helper function to map app's desired time frame to what CoinGecko's /coins/markets endpoint
+// supports for its `price_change_percentage` parameter.
+function mapAppTimeFrameToCoinGeckoParam(appTimeFrame: AppTimeFrame): string {
+  switch (appTimeFrame) {
+    case "15m":
+    case "30m":
+    case "1h":
+      return "1h"; // For 15m, 30m, and 1h analysis, use CoinGecko's 1h price change data.
+    case "4h":
+    case "12h":
+    case "24h":
+      return "24h"; // For 4h, 12h, and 24h analysis, use CoinGecko's 24h price change data.
+    case "7d":
+      return "7d";
+    case "30d":
+      return "30d";
+    default:
+      // Fallback, though all AppTimeFrame values should be covered.
+      console.warn(`Unknown AppTimeFrame: ${appTimeFrame}, defaulting to 24h for CoinGecko param.`);
+      return "24h";
+  }
+}
+
+
 // Schema for individual coin from CoinGecko's /coins/list endpoint
 const CoinListItemSchema = z.object({
   id: z.string(),
@@ -15,7 +44,6 @@ const CoinListItemSchema = z.object({
 type CoinListItem = z.infer<typeof CoinListItemSchema>;
 
 // Schema for individual coin data from CoinGecko's /coins/markets endpoint
-// This schema needs to be flexible for dynamic price_change_percentage fields
 const CoinGeckoMarketCoinSchema = z.object({
   id: z.string(),
   symbol: z.string(),
@@ -29,7 +57,6 @@ const CoinGeckoMarketCoinSchema = z.object({
   high_24h: z.number().nullable(),
   low_24h: z.number().nullable(),
   price_change_24h: z.number().nullable(),
-  // price_change_percentage_24h: z.number().nullable(), // This will be handled dynamically
   market_cap_change_24h: z.number().nullable(),
   market_cap_change_percentage_24h: z.number().nullable(),
   circulating_supply: z.number().nullable(),
@@ -50,7 +77,6 @@ const CoinGeckoMarketCoinSchema = z.object({
 }).catchall(z.any()); // Allows other properties like price_change_percentage_Xh_in_currency
 
 
-// This is the structure we'll return from our service function.
 const ProcessedCoinDataSchema = z.object({
   id: z.string(),
   symbol: z.string(),
@@ -64,20 +90,13 @@ const ProcessedCoinDataSchema = z.object({
 export type CryptoCoinData = z.infer<typeof ProcessedCoinDataSchema>;
 
 const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3';
-const SUPPORTED_TIME_FRAMES = ["1h", "24h", "7d", "14d", "30d", "200d", "1y"];
 
-
-/**
- * Fetches a list of all coins from CoinGecko for symbol-to-ID mapping.
- * @returns A promise that resolves to an array of CoinListItems.
- */
 async function fetchCoinList(): Promise<CoinListItem[]> {
   const url = `${COINGECKO_API_BASE_URL}/coins/list?include_platform=false`;
   try {
     const response = await fetch(url, {
       headers: { 'Accept': 'application/json' },
-      // Cache this aggressively as it changes infrequently. Force revalidation once per day.
-      next: { revalidate: 86400 } // 24 hours in seconds
+      next: { revalidate: 86400 } 
     });
     if (!response.ok) {
       const errorBody = await response.text();
@@ -101,26 +120,19 @@ async function fetchCoinList(): Promise<CoinListItem[]> {
   }
 }
 
-
-/**
- * Fetches market data from CoinGecko.
- * If symbols are provided, fetches data for those specific coins.
- * Otherwise, fetches a list of top coins by market cap.
- * @param count - The number of top coins to fetch if symbols is not provided.
- * @param symbols - Optional comma-separated string of coin symbols (e.g., "btc,eth").
- * @param timeFrame - The time frame for price change percentage (e.g., "1h", "24h", "7d").
- * @returns A promise that resolves to an array of processed coin market data.
- */
 export async function fetchCoinData(
   count: number = 5,
   symbols?: string,
-  timeFrame: string = "24h" // Default to 24h
+  // User's selected time frame for analysis (e.g., "15m", "1h", "4h", "24h", "7d")
+  userSelectedTimeFrame: AppTimeFrame = "24h" 
 ): Promise<CryptoCoinData[]> {
   const vs_currency = 'usd';
   const order = 'market_cap_desc';
   let coinGeckoIdsToFetch: string | undefined = undefined;
 
-  const validTimeFrame = SUPPORTED_TIME_FRAMES.includes(timeFrame) ? timeFrame : "24h";
+  // Map the user's selected time frame to the actual parameter CoinGecko API supports
+  // for `price_change_percentage`. This data point will be an approximation for some user selections.
+  const coinGeckoTimeFrameParam = mapAppTimeFrameToCoinGeckoParam(userSelectedTimeFrame);
 
   if (symbols && symbols.trim() !== '') {
     const coinList = await fetchCoinList();
@@ -141,9 +153,7 @@ export async function fetchCoinData(
     coinGeckoIdsToFetch = ids.join(',');
   }
 
-  // Construct the URL for /coins/markets
-  // The price_change_percentage parameter tells CoinGecko which price change fields to include.
-  let url = `${COINGECKO_API_BASE_URL}/coins/markets?vs_currency=${vs_currency}&order=${order}&price_change_percentage=${validTimeFrame}&sparkline=false`;
+  let url = `${COINGECKO_API_BASE_URL}/coins/markets?vs_currency=${vs_currency}&order=${order}&price_change_percentage=${coinGeckoTimeFrameParam}&sparkline=false`;
 
   if (coinGeckoIdsToFetch) {
     url += `&ids=${coinGeckoIdsToFetch}`;
@@ -154,7 +164,7 @@ export async function fetchCoinData(
   try {
     const response = await fetch(url, {
       headers: { 'Accept': 'application/json' },
-      cache: 'no-store', // Data is time-sensitive
+      cache: 'no-store', 
     });
 
     if (!response.ok) {
@@ -172,11 +182,9 @@ export async function fetchCoinData(
     const data = await response.json();
     
     if (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0 && coinGeckoIdsToFetch) {
-        // This can happen if valid IDs were passed but CoinGecko returned an empty object for some reason (e.g. non-existent combination)
         console.warn(`CoinGecko returned empty object for IDs: ${coinGeckoIdsToFetch}`);
         return [];
     }
-
 
     const validationResult = z.array(CoinGeckoMarketCoinSchema).safeParse(data);
 
@@ -185,10 +193,12 @@ export async function fetchCoinData(
       throw new Error("Invalid data format received from CoinGecko API (coins/markets).");
     }
 
-    const priceChangeKey = `price_change_percentage_${validTimeFrame}_in_currency`;
+    // This key is used to extract the price change % from CoinGecko's response.
+    // It corresponds to the `coinGeckoTimeFrameParam` we requested.
+    const priceChangeKeyForExtraction = `price_change_percentage_${coinGeckoTimeFrameParam}_in_currency`;
 
     const processedData: CryptoCoinData[] = validationResult.data.map(coin => {
-      const coinTyped = coin as any; // Type assertion to access dynamic key
+      const coinTyped = coin as any; 
       return {
         id: coin.id,
         symbol: coin.symbol.toUpperCase(),
@@ -196,7 +206,10 @@ export async function fetchCoinData(
         current_price: coin.current_price,
         market_cap: coin.market_cap,
         total_volume: coin.total_volume,
-        price_change_percentage_selected_timeframe: coinTyped[priceChangeKey] ?? null,
+        // This field now holds the price change from the `coinGeckoTimeFrameParam` (e.g., 1h or 24h).
+        // The AI will be informed that this is the available metric, but the `selected_time_frame` (user's original choice)
+        // should guide its analysis duration.
+        price_change_percentage_selected_timeframe: coinTyped[priceChangeKeyForExtraction] ?? null,
         last_updated: coin.last_updated,
       };
     });

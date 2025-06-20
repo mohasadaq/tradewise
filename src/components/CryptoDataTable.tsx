@@ -17,14 +17,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, Brain, ShieldAlert } from "lucide-react";
+import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, Brain, ShieldAlert, ClockIcon } from "lucide-react";
 import type { AnalyzeCryptoTradesOutput } from "@/ai/flows/analyze-crypto-trades";
 import type { SortKey, SortDirection } from "./FilterSortControls";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import CryptoListItem from "./CryptoListItem";
 
-type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { tradingStrategy?: string; riskManagementNotes?: string; };
+type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
+  tradingStrategy?: string; 
+  riskManagementNotes?: string;
+  timeFrameAnalysisContext?: string;
+};
 
 interface CryptoDataTableProps {
   recommendations: TradingRecommendation[];
@@ -101,11 +105,8 @@ const formatPrice = (price: number | undefined | null) => {
   }
 
   if (price > 0 && price < 0.01) {
-    // For prices like $0.00123, show actual value up to 5 decimal places
     return price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 5 });
   } else {
-    // For $0.00 or prices $0.01 and above (e.g., $0.12, $1.23456)
-    // Show 2 to 5 decimal places
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 5 });
   }
 };
@@ -130,7 +131,8 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     { key: null, label: "Risk Mgt." },
     { key: "confidenceLevel", label: "Confidence" },
     { key: null, label: "Indicators" },
-    { key: null, label: "Analysis" },
+    { key: null, label: "Order Book" },
+    { key: null, label: "TF Context" },
   ] as const;
 
   if (isMobile) {
@@ -172,14 +174,13 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {recommendations.length === 0 && (
+                {recommendations.length === 0 ? (
                   <TableRow>
                       <TableCell colSpan={tableHeaders.length} className="h-24 text-center text-muted-foreground">
                       No recommendations available. Try analyzing some coins.
                       </TableCell>
                   </TableRow>
-                )}
-                {recommendations.length > 0 && recommendations.map((rec) => (
+                ) : recommendations.map((rec) => (
                     <TableRow key={`${rec.coin}-${rec.coinName}`} className="hover:bg-muted/50">
                     <TableCell className="font-medium px-2 py-2 sm:px-4 sm:py-3 uppercase text-xs sm:text-sm whitespace-nowrap">{rec.coinName} ({rec.coin})</TableCell>
                     <TableCell className="px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm whitespace-nowrap">${formatPrice(rec.currentPrice)}</TableCell>
@@ -252,6 +253,19 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                         </TooltipContent>
                         </Tooltip>
                     </TableCell>
+                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3">
+                        <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7">
+                            <ClockIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[240px] sm:max-w-md bg-popover text-popover-foreground p-2 sm:p-3 rounded-md shadow-lg whitespace-pre-wrap break-words">
+                            <p className="font-semibold mb-1 text-xs sm:text-sm">Time Frame Context:</p>
+                            <p className="text-xs sm:text-sm">{rec.timeFrameAnalysisContext || "N/A"}</p>
+                        </TooltipContent>
+                        </Tooltip>
+                    </TableCell>
                     </TableRow>
                 ))}
             </TableBody>
@@ -261,4 +275,3 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     </TooltipProvider>
   );
 }
-

@@ -15,7 +15,7 @@ import SkeletonListItem from "./SkeletonListItem";
 
 export default function SkeletonTable({ rows = 3 }: { rows?: number }) {
   const isMobile = useIsMobile();
-  const numColumns = 10;
+  const numColumns = 11; // Updated to include new Time Frame Context column
 
   if (isMobile) {
     return (
@@ -27,7 +27,6 @@ export default function SkeletonTable({ rows = 3 }: { rows?: number }) {
     );
   }
 
-  // Desktop view
   return (
     <div className="rounded-lg border shadow-md overflow-hidden bg-card">
       <div className="overflow-x-auto">
@@ -53,7 +52,8 @@ export default function SkeletonTable({ rows = 3 }: { rows?: number }) {
                 <TableCell key={`skel-cell-${rowIndex}-7`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>,
                 <TableCell key={`skel-cell-${rowIndex}-8`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-7 sm:h-8 w-16 sm:w-20 rounded-full" /></TableCell>,
                 <TableCell key={`skel-cell-${rowIndex}-9`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>,
-                <TableCell key={`skel-cell-${rowIndex}-10`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>
+                <TableCell key={`skel-cell-${rowIndex}-10`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-11`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell> 
               ];
               return (
                 <TableRow key={rowIndex} className="hover:bg-muted/50">

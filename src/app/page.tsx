@@ -3,25 +3,30 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { analyzeCryptoTrades, type AnalyzeCryptoTradesOutput, type AICoinAnalysisInputData } from "@/ai/flows/analyze-crypto-trades";
-import { fetchCoinData, type CryptoCoinData } from "@/services/crypto-data-service";
+import { fetchCoinData, type CryptoCoinData, type AppTimeFrame } from "@/services/crypto-data-service"; // Import AppTimeFrame
 import TradewiseHeader from "@/components/TradewiseHeader";
 import CryptoDataTable from "@/components/CryptoDataTable";
 import FilterSortControls, {
   type ConfidenceFilter,
   type SortKey,
   type SortDirection,
-  type TimeFrame,
+  type TimeFrame, // This will now be AppTimeFrame via FilterSortControls
 } from "@/components/FilterSortControls";
 import SkeletonTable from "@/components/SkeletonTable";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
-type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { coinName: string; tradingStrategy?: string; riskManagementNotes?: string; };
+type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
+  coinName: string; 
+  tradingStrategy?: string; 
+  riskManagementNotes?: string;
+  timeFrameAnalysisContext?: string; 
+};
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
 const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
-const DEFAULT_TIME_FRAME: TimeFrame = "24h";
+const DEFAULT_TIME_FRAME: AppTimeFrame = "24h";
 
 const STABLECOIN_SYMBOLS: string[] = [
   'usdt', 'usdc', 'busd', 'dai', 'tusd', 'usdp', 'gusd', 'fdusd', 'usdd', 'frax', 'lusd', 'pax', 'eurc', 'usde'
@@ -64,7 +69,7 @@ export default function TradeWisePage() {
       const marketData: CryptoCoinData[] = await fetchCoinData(
         NUMBER_OF_COINS_TO_FETCH_DEFAULT,
         currentSymbols,
-        currentTimeFrame
+        currentTimeFrame 
       );
 
       if (!marketData || marketData.length === 0) {
@@ -74,7 +79,7 @@ export default function TradeWisePage() {
         const errorTitle = isAutoRefresh ? "Auto-Refresh: Market Data Error" : "Market Data Error";
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Market Data Error", description: message, variant: "destructive" });
-        } else {
+        } else if (isAutoRefresh) { // Ensure auto-refresh errors also show toasts
             toast({ title: errorTitle, description: message, variant: "destructive" });
         }
         setIsLoading(false);
@@ -90,14 +95,14 @@ export default function TradeWisePage() {
         const errorTitle = isAutoRefresh ? "Auto-Refresh: No Coins for Analysis" : "No Coins for Analysis";
         if (fetchToastId) {
           toast({id: fetchToastId, title: "No Coins for Analysis", description: message, variant: "destructive" });
-        } else {
+        } else if (isAutoRefresh) {
           toast({ title: errorTitle, description: message, variant: "destructive" });
         }
         setIsLoading(false);
         return;
       }
 
-      if (fetchToastId) { // Only show "Market Data Fetched" for manual refreshes
+      if (fetchToastId) { 
         toast({id: fetchToastId, title: "Market Data Fetched", description: `Found ${nonStableMarketData.length} non-stablecoin(s). Starting AI analysis ${timeFrameDescription}...`});
       }
 
@@ -109,7 +114,7 @@ export default function TradeWisePage() {
         market_cap: md.market_cap,
         total_volume: md.total_volume,
         price_change_percentage_in_selected_timeframe: md.price_change_percentage_selected_timeframe,
-        selected_time_frame: currentTimeFrame,
+        selected_time_frame: currentTimeFrame, // Pass the user's selected time frame
       }));
 
       const input = { coinsData: aiInputData };
@@ -127,14 +132,15 @@ export default function TradeWisePage() {
             coinName: matchedMarketData?.name ?? rec.coinName,
             tradingStrategy: rec.tradingStrategy || "N/A",
             riskManagementNotes: rec.riskManagementNotes || "N/A",
+            timeFrameAnalysisContext: rec.timeFrameAnalysisContext || "N/A",
           };
         });
         setRecommendations(updatedRecommendations);
         setLastUpdated(new Date());
         const successMessage = `Found ${updatedRecommendations.length} recommendations for ${nonStableMarketData.length} non-stablecoin(s) from ${analysisTargetDescription} ${timeFrameDescription}.`;
-        if (fetchToastId) { // Only show "Analysis Complete" for manual refreshes
+        if (fetchToastId) { 
             toast({id: fetchToastId, title: "Analysis Complete", description: successMessage });
-        } else if (!isAutoRefresh) { // This case might not be hit often if fetchToastId is always set for manual
+        } else if (!isAutoRefresh) { 
             toast({ title: "Analysis Complete", description: successMessage });
         }
       } else {
@@ -144,7 +150,7 @@ export default function TradeWisePage() {
         const errorTitle = isAutoRefresh ? "Auto-Refresh: Analysis Issue" : "Analysis Issue";
         if (fetchToastId) {
             toast({id: fetchToastId, title: "Analysis Issue", description: message, variant: "destructive" });
-        } else {
+        } else if (isAutoRefresh) {
             toast({ title: errorTitle, description: message, variant: "destructive" });
         }
       }
@@ -158,8 +164,10 @@ export default function TradeWisePage() {
       const toastErrorMessage = isAutoRefresh ? `Auto-refresh: ${errorMessage}`: `Error: ${errorMessage}`;
        if (fetchToastId) {
             toast({id: fetchToastId, title: "Analysis Failed", description: `Error: ${errorMessage}`, variant: "destructive" });
-        } else {
+        } else if (isAutoRefresh) {
             toast({ title: errorTitle, description: toastErrorMessage, variant: "destructive" });
+        } else { // For manual trigger errors not covered by fetchToastId
+            toast({ title: "Analysis Failed", description: `Error: ${errorMessage}`, variant: "destructive" });
         }
     } finally {
       setIsLoading(false);
@@ -167,9 +175,9 @@ export default function TradeWisePage() {
   }, [toast, selectedTimeFrame]);
 
   useEffect(() => {
-    performAnalysis(undefined, DEFAULT_TIME_FRAME, true);
+    performAnalysis(undefined, DEFAULT_TIME_FRAME, false); // Initial load is not an auto-refresh
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Only on mount
 
   useEffect(() => {
     const intervalId = setInterval(() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame, true), REFRESH_INTERVAL);
@@ -314,4 +322,3 @@ export default function TradeWisePage() {
     </div>
   );
 }
-

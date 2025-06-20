@@ -13,14 +13,19 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ListRestart, RefreshCw, Search, Clock } from "lucide-react";
+import type { AppTimeFrame } from '@/services/crypto-data-service'; // Import AppTimeFrame
 
 export type ConfidenceFilter = "All" | "High" | "Medium" | "Low";
 export type SortKey = "coin" | "currentPrice" | "entryPrice" | "exitPrice" | "signal" | "confidenceLevel";
 export type SortDirection = "asc" | "desc";
-export type TimeFrame = "1h" | "24h" | "7d" | "30d";
+export type TimeFrame = AppTimeFrame; // Use AppTimeFrame from service
 
 const timeFrameOptions: { value: TimeFrame; label: string }[] = [
+  { value: "15m", label: "15 Minutes" },
+  { value: "30m", label: "30 Minutes" },
   { value: "1h", label: "1 Hour" },
+  { value: "4h", label: "4 Hours" },
+  { value: "12h", label: "12 Hours" },
   { value: "24h", label: "24 Hours" },
   { value: "7d", label: "7 Days" },
   { value: "30d", label: "30 Days" },
@@ -89,8 +94,6 @@ export default function FilterSortControls({
             value={selectedTimeFrame}
             onValueChange={(value) => {
               setSelectedTimeFrame(value as TimeFrame);
-              // Optionally, trigger analysis on timeframe change, or let user click "Analyze"
-              // For now, user clicks "Analyze"
             }}
           >
             <SelectTrigger id="timeFrameFilter" className="bg-background text-xs sm:text-sm h-9 sm:h-10">

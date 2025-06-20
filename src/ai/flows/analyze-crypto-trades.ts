@@ -21,8 +21,8 @@ const AICoinAnalysisInputDataSchema = z.object({
   current_price: z.number().nullable().describe("The current market price of the coin in USD."),
   market_cap: z.number().nullable().describe("The market capitalization of the coin in USD."),
   total_volume: z.number().nullable().describe("The total trading volume in the last 24 hours in USD."),
-  price_change_percentage_in_selected_timeframe: z.number().nullable().describe("The price change percentage for the selected time frame (e.g., if '7d' was selected, this is the 7-day price change percentage)."),
-  selected_time_frame: z.string().describe("The time frame for which the 'price_change_percentage_in_selected_timeframe' is reported (e.g., '1h', '24h', '7d', '30d')."),
+  price_change_percentage_in_selected_timeframe: z.number().nullable().describe("The price change percentage for the selected time frame (e.g., if '1h' was used to fetch this data, this is the 1-hour price change percentage). This value might be for a standard interval (like 1h or 24h) if the user's 'selected_time_frame' is more granular (e.g., 15m, 4h)."),
+  selected_time_frame: z.string().describe("The user's selected time frame for analysis (e.g., '15m', '30m', '1h', '4h', '12h', '24h', '7d', '30d'). This is the primary context for the analysis duration and strategy. The AI should explicitly state what this time frame implies for trading."),
 });
 export type AICoinAnalysisInputData = z.infer<typeof AICoinAnalysisInputDataSchema>;
 
@@ -48,8 +48,9 @@ const AnalyzeCryptoTradesOutputSchema = z.object({
         .array(z.string())
         .describe('Key technical indicators supporting the recommendation (e.g., RSI, MACD crossover, Bollinger Bands). These should consider the selected_time_frame and clearly justify the entry/exit prices.'),
       orderBookAnalysis: z.string().describe('Summary of inferred order book analysis or market sentiment, which should also contribute to justifying the entry/exit points.'),
-      tradingStrategy: z.string().optional().describe('The suggested trading strategy including its typical duration (e.g., "Day Trade (intra-day, up to 24h)", "Swing Trade (days to weeks)") appropriate for the selected_time_frame and analysis. This strategy should clearly align with the entry/exit prices and the technical conditions that validate them.'),
+      tradingStrategy: z.string().optional().describe('The suggested trading strategy including its typical duration (e.g., "Scalping (minutes to few hours) for 15m/30m/1h", "Day Trade (intra-day, up to 24h) for 4h/12h/24h", "Swing Trade (days to weeks) for 7d/30d") appropriate for the selected_time_frame and analysis. This strategy should clearly align with the entry/exit prices and the technical conditions that validate them.'),
       riskManagementNotes: z.string().optional().describe('Key risk management considerations for the trade, such as suggested stop-loss principles, position sizing advice, or volatility warnings. Emphasize responsible trading practices.'),
+      timeFrameAnalysisContext: z.string().optional().describe("A brief explanation of what the 'selected_time_frame' (e.g., 15m, 4h, 7d) typically indicates for traders and how it influenced this specific analysis."),
     })
   ).describe('A list of trading recommendations for the specified crypto coins.'),
 });
@@ -67,8 +68,9 @@ const analyzeCryptoTradesPrompt = ai.definePrompt({
   input: {schema: AnalyzeCryptoTradesInputSchema},
   output: {schema: AnalyzeCryptoTradesOutputSchema},
   prompt: `You are an expert AI crypto trading analyst, acting with the insight and conciseness of a seasoned professional trader. Your analysis must be insightful, actionable, and clearly justified.
-You have been provided with real-time market data for several cryptocurrencies, including price change percentage for a specific time frame.
-Your task is to analyze each coin based on this provided data and your knowledge of technical analysis (e.g., RSI, MACD, Bollinger Bands, support/resistance levels) and market sentiment, paying close attention to the 'selected_time_frame' for the price change data.
+You have been provided with market data for several cryptocurrencies. The 'selected_time_frame' field in the input indicates the user's desired analysis perspective (e.g., '15m', '1h', '4h', '24h', '7d'). The 'price_change_percentage_in_selected_timeframe' field provides a price change metric, which may correspond to a standard interval (like 1h or 24h) that is the closest available to the user's selected_time_frame if the user chose a more granular view (e.g., '15m' analysis might use 1h price change data).
+
+Your primary task is to perform the analysis based on the user's 'selected_time_frame'. Your strategies, entry/exit points, and overall reasoning must be appropriate for this user-selected duration.
 Do not attempt to fetch external data; use only the data provided below for current prices and market stats.
 
 Analyze the following coins:
@@ -80,8 +82,8 @@ Coin Details:
 - Current Price (USD): {{#if current_price}}{{current_price}}{{else}}N/A{{/if}}
 - Market Cap (USD): {{#if market_cap}}{{market_cap}}{{else}}N/A{{/if}}
 - 24h Volume (USD): {{#if total_volume}}{{total_volume}}{{else}}N/A{{/if}}
-- Price Change ({{selected_time_frame}}) (%): {{#if price_change_percentage_in_selected_timeframe}}{{price_change_percentage_in_selected_timeframe}}%{{else}}N/A{{/if}}
-- Analysis Time Frame: {{{selected_time_frame}}}
+- Price Change (for data point): {{#if price_change_percentage_in_selected_timeframe}}{{price_change_percentage_in_selected_timeframe}}%{{else}}N/A{{/if}} (Note: this % change might be for a broader interval like 1h or 24h if selected_time_frame is more granular)
+- User's Selected Analysis Time Frame: {{{selected_time_frame}}} (This is the key timeframe for your analysis focus)
 ---
 {{/each}}
 
@@ -89,19 +91,18 @@ For each coin, provide a professional-level trading analysis:
 1.  'coin': The ticker symbol (e.g., BTC, ETH). This MUST match the 'symbol' from the input for that coin.
 2.  'coinName': The full name of the coin (e.g., Bitcoin, Ethereum). This MUST match the 'name' from the input for that coin.
 3.  'currentPrice': The current market price provided in the input.
-4.  'entryPrice': Your recommended entry price, suitable for the selected_time_frame and suggested tradingStrategy.
-5.  'exitPrice': Your recommended exit price, suitable for the selected_time_frame and suggested tradingStrategy.
+4.  'entryPrice': Your recommended entry price, suitable for the user's 'selected_time_frame' and suggested tradingStrategy.
+5.  'exitPrice': Your recommended exit price, suitable for the user's 'selected_time_frame' and suggested tradingStrategy.
 6.  'signal': A clear trading signal: "Buy", "Sell", or "Hold". Critically evaluate all three possibilities. Provide "Sell" signals with the same rigor and justification as "Buy" or "Hold" signals when indicators suggest a bearish outlook or profit-taking opportunity. Do not shy away from "Sell" signals if the analysis supports it.
 7.  'confidenceLevel': Your confidence in this recommendation: "High", "Medium", or "Low".
-8.  'technicalIndicators': A list of 3-5 key technical indicators or chart patterns. Crucially, explain how these specific indicators support your recommended 'entryPrice' and 'exitPrice', and the chosen 'signal'. For example, "RSI divergence suggests potential reversal, enter on break of [level]" or "Bearish MACD crossover and break of key support [level] indicates a 'Sell' signal."
-9.  'orderBookAnalysis': A brief summary of inferred order book dynamics or market sentiment. Explain how this analysis, combined with technical indicators, justifies the proposed 'entryPrice', 'exitPrice', and the overall trading signal (Buy, Sell, or Hold). Describe the market conditions (e.g., "buy on confirmation of support at [level]", "sell if momentum fades below [level]", "consider selling if price fails to break resistance at [level] and shows signs of weakness") that would validate acting on your recommendations.
-10. 'tradingStrategy': Based on the 'selected_time_frame' (e.g., '1h', '24h', '7d', '30d') and your overall analysis, suggest an appropriate trading strategy. This strategy description MUST include a typical holding period or duration relevant to the selected_time_frame. Examples: "Scalping (minutes to few hours)" for 1h; "Day Trade (intra-day, up to 24h)" for 24h; "Swing Trade (days to a few weeks)" for 7d; "Longer Swing Trade / Position Entry (weeks to months)" for 30d. The strategy, its duration, and the entry/exit prices must be coherently justified by your technical and market sentiment analysis.
-11. 'riskManagementNotes': Provide concise and actionable risk management advice specific to this trade. This could include principles for setting a stop-loss (e.g., "Consider a stop-loss below key support level [X] or if price drops by Y% from entry"), general advice on position sizing (e.g., "Due to observed volatility, consider a smaller position size, e.g., 1-2% of trading capital"), and any specific risks (e.g., "High correlation with BTC movements, monitor BTC price action"). Emphasize responsible trading practices like not risking more than one can afford to lose.
+8.  'technicalIndicators': A list of 3-5 key technical indicators or chart patterns. Crucially, explain how these specific indicators support your recommended 'entryPrice' and 'exitPrice', and the chosen 'signal', all within the context of the user's 'selected_time_frame'.
+9.  'orderBookAnalysis': A brief summary of inferred order book dynamics or market sentiment. Explain how this analysis, combined with technical indicators, justifies the proposed 'entryPrice', 'exitPrice', and the overall trading signal, considering the user's 'selected_time_frame'.
+10. 'tradingStrategy': Based on the user's 'selected_time_frame' and your overall analysis, suggest an appropriate trading strategy. This strategy description MUST include a typical holding period or duration relevant to the 'selected_time_frame'. Examples: "Scalping (minutes up to an hour)" for 15m/30m; "Short-term Intraday (few hours)" for 1h; "Intraday / Short Swing (several hours to a day)" for 4h/12h; "Day Trade / Swing Entry (1-3 days)" for 24h; "Swing Trade (days to a few weeks)" for 7d; "Longer Swing / Position Entry (weeks to months)" for 30d. The strategy, its duration, and the entry/exit prices must be coherently justified.
+11. 'riskManagementNotes': Provide concise and actionable risk management advice specific to this trade and the 'selected_time_frame'.
+12. 'timeFrameAnalysisContext': Briefly explain what the user's 'selected_time_frame' typically indicates for traders (e.g., "A 15-minute time frame is often used for scalping..."). Then, state how this specific 'selected_time_frame' has influenced your analysis for this coin, particularly regarding the choice of indicators, strategy, and price targets.
 
-Format your entire response as a single JSON object matching the output schema, containing a 'tradingRecommendations' array. Each object in the array must pertain to one of the analyzed coins.
-Ensure all fields in the output schema are populated, including 'tradingStrategy' and 'riskManagementNotes'. If a value cannot be determined, use null where appropriate for number fields, or a descriptive string like "N/A" for string fields if absolutely necessary.
-Double-check that the 'coin' symbol and 'coinName' in your output exactly match the 'symbol' and 'name' provided in the input for each respective coin.
-Your overall goal is to provide clear, actionable, well-justified, and balanced trading advice, akin to what a professional trader would offer, considering all potential signals (Buy, Sell, Hold) and the specific time frame of the analysis, including robust risk management principles.
+Format your entire response as a single JSON object matching the output schema, containing a 'tradingRecommendations' array.
+Ensure all fields are populated.
 `,
 });
 
@@ -120,7 +121,6 @@ const analyzeCryptoTradesFlow = ai.defineFlow(
         console.error("AI analysis returned no output.");
         return { tradingRecommendations: [] };
     }
-    // Ensure the output structure is as expected
     const validatedRecommendations = output.tradingRecommendations.map(rec => {
         const originalCoinData = input.coinsData.find(
           cd => cd.symbol.toLowerCase() === rec.coin.toLowerCase() || cd.name.toLowerCase() === rec.coinName.toLowerCase()
@@ -128,13 +128,13 @@ const analyzeCryptoTradesFlow = ai.defineFlow(
         return {
             ...rec,
             currentPrice: originalCoinData?.current_price ?? rec.currentPrice ?? null,
-            coinName: originalCoinData?.name ?? rec.coinName, // Prioritize input name
-            tradingStrategy: rec.tradingStrategy || "N/A", // Ensure tradingStrategy has a fallback
-            riskManagementNotes: rec.riskManagementNotes || "N/A", // Ensure riskManagementNotes has a fallback
+            coinName: originalCoinData?.name ?? rec.coinName,
+            tradingStrategy: rec.tradingStrategy || "N/A",
+            riskManagementNotes: rec.riskManagementNotes || "N/A",
+            timeFrameAnalysisContext: rec.timeFrameAnalysisContext || `Analysis based on ${originalCoinData?.selected_time_frame || 'selected time frame'}.`,
         };
     });
 
     return { tradingRecommendations: validatedRecommendations };
   }
 );
-
