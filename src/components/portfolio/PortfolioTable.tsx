@@ -45,48 +45,51 @@ const formatPercentage = (percentage: number | undefined | null) => {
 
 export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMarketData, onRefresh }: PortfolioTableProps) {
 
-  const renderSkeletonCellsForHolding = (holdingId: string) => (
-    <>
-      <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell> {/* Current Price */}
-      <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell> {/* Total Cost - should be calculated */}
-      <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell> {/* Current Value */}
-      <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell> {/* P/L Amount */}
-      <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell> {/* P/L Percent */}
-    </>
-  );
+  const renderSkeletonCellsForHolding = (keyPrefix: string): React.ReactNode[] => [
+    <TableCell key={`${keyPrefix}-skel-cp`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>, {/* Current Price */}
+    <TableCell key={`${keyPrefix}-skel-tc`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>, {/* Total Cost */}
+    <TableCell key={`${keyPrefix}-skel-cv`} className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>, {/* Current Value */}
+    <TableCell key={`${keyPrefix}-skel-pl`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>, {/* P/L Amount */}
+    <TableCell key={`${keyPrefix}-skel-plp`} className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell> {/* P/L Percent */}
+  ];
   
-  const renderValueCellsForHolding = (holding: EnrichedPortfolioHolding) => {
+  const renderValueCellsForHolding = (holding: EnrichedPortfolioHolding): React.ReactNode[] => {
     const plColor = holding.profitLoss == null ? "text-foreground" 
                    : holding.profitLoss > 0 ? "text-accent" 
                    : holding.profitLoss < 0 ? "text-destructive" 
                    : "text-foreground";
-    return (
-      <>
-        <TableCell className="text-right">${formatPrice(holding.currentPrice)}</TableCell>
-        <TableCell className="text-right">${formatPrice(holding.totalCost)}</TableCell>
-        <TableCell className="text-right">${formatPrice(holding.currentValue)}</TableCell>
-        <TableCell className={cn("text-right font-medium", plColor)}>
-          {(holding.profitLoss != null && holding.profitLoss > 0 ? "+" : "") + `$${formatPrice(holding.profitLoss)}`}
-        </TableCell>
-        <TableCell className={cn("text-right font-medium", plColor)}>
-          {(holding.profitLossPercentage != null && holding.profitLossPercentage > 0 ? "+" : "") + `${formatPercentage(holding.profitLossPercentage)}`}
-        </TableCell>
-      </>
-    );
+    return [
+      <TableCell key={`${holding.id}-val-cp`} className="text-right">${formatPrice(holding.currentPrice)}</TableCell>,
+      <TableCell key={`${holding.id}-val-tc`} className="text-right">${formatPrice(holding.totalCost)}</TableCell>,
+      <TableCell key={`${holding.id}-val-cv`} className="text-right">${formatPrice(holding.currentValue)}</TableCell>,
+      <TableCell key={`${holding.id}-val-pl`} className={cn("text-right font-medium", plColor)}>
+        {(holding.profitLoss != null && holding.profitLoss > 0 ? "+" : "") + `$${formatPrice(holding.profitLoss)}`}
+      </TableCell>,
+      <TableCell key={`${holding.id}-val-plp`} className={cn("text-right font-medium", plColor)}>
+        {(holding.profitLossPercentage != null && holding.profitLossPercentage > 0 ? "+" : "") + `${formatPercentage(holding.profitLossPercentage)}`}
+      </TableCell>
+    ];
   };
 
-
   const renderSkeletonRowsForInitialLoad = (count: number) => {
-    return Array.from({ length: count }).map((_, index) => (
-      <TableRow key={`skeleton-initial-${index}`}>
-        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-12" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-        {renderSkeletonCellsForHolding(`skeleton-initial-data-${index}`)}
-        <TableCell><Skeleton className="h-8 w-8 rounded" /></TableCell>
-      </TableRow>
-    ));
+    return Array.from({ length: count }).map((_, index) => {
+      const staticSkeletonCells = [
+        <TableCell key={`skel-initial-${index}-name`}><Skeleton className="h-5 w-24" /></TableCell>,
+        <TableCell key={`skel-initial-${index}-symbol`}><Skeleton className="h-5 w-12" /></TableCell>,
+        <TableCell key={`skel-initial-${index}-qty`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>,
+        <TableCell key={`skel-initial-${index}-buyprice`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
+      ];
+      const dynamicSkeletonCells = renderSkeletonCellsForHolding(`skeleton-initial-data-${index}`);
+      const actionSkeletonCell = <TableCell key={`skel-initial-${index}-action`} className="text-center"><Skeleton className="h-8 w-8 rounded mx-auto" /></TableCell>;
+      
+      return (
+        <TableRow key={`skeleton-initial-${index}`}>
+          {staticSkeletonCells}
+          {dynamicSkeletonCells}
+          {actionSkeletonCell}
+        </TableRow>
+      );
+    });
   };
   
   return (
@@ -115,7 +118,7 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoadingMarketData && holdings.length === 0 ? ( // True initial load skeleton for the whole table
+            {isLoadingMarketData && holdings.length === 0 ? ( 
               renderSkeletonRowsForInitialLoad(3)
             ) : !isLoadingMarketData && holdings.length === 0 ? (
               <TableRow>
@@ -130,10 +133,10 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
                     <TableCell>{holding.symbol.toUpperCase()}</TableCell>
                     <TableCell className="text-right">{formatPrice(holding.quantity, 2, 8)}</TableCell>
                     <TableCell className="text-right">${formatPrice(holding.purchasePrice)}</TableCell>
-                    {isLoadingMarketData || holding.currentPrice === undefined ? 
+                    {...(isLoadingMarketData || holding.currentPrice === undefined ? 
                         renderSkeletonCellsForHolding(holding.id) : 
                         renderValueCellsForHolding(holding)
-                    }
+                    )}
                     <TableCell className="text-center">
                        <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -166,3 +169,4 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
     </div>
   );
 }
+
