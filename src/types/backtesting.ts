@@ -6,8 +6,14 @@ export interface BacktestConfiguration {
   startDate: Date;
   endDate: Date;
   initialCapital: number;
-  shortMAPeriod: number;
-  longMAPeriod: number;
+  // MA Crossover specific params - will be removed or made optional later if we keep both modes
+  // shortMAPeriod: number;
+  // longMAPeriod: number;
+
+  // AI Recommendation specific params
+  aiSignal?: 'Buy' | 'Sell' | 'Hold' | string; // string for flexibility if AI outputs other variations
+  aiEntryPrice?: number | null;
+  aiExitPrice?: number | null;
 }
 
 export interface TradeLogEntry {
@@ -17,7 +23,7 @@ export interface TradeLogEntry {
   quantity: number;
   cashAfterTrade: number;
   coinsHeld: number;
-  reason: string; // e.g., "Short MA crossed above Long MA"
+  reason: string; 
 }
 
 export interface BacktestResult {
@@ -27,13 +33,14 @@ export interface BacktestResult {
   profitLossPercentage: number;
   totalTrades: number;
   tradeLog: TradeLogEntry[];
-  historicalDataWithMAs?: (HistoricalPricePoint & { shortMA?: number; longMA?: number })[];
+  historicalDataWithMAs?: (HistoricalPricePoint & { shortMA?: number; longMA?: number })[]; // Kept for potential future MA crossover display
   buyAndHoldProfitLossPercentage?: number;
-  statusMessage?: string; // New field for informational messages
+  statusMessage?: string; 
 }
 
+// This type might be deprecated if MA Crossover is fully removed from this flow.
+// For now, it's not directly used by the AI Recommendation backtest.
 export interface MAValues {
   shortMA?: number;
   longMA?: number;
 }
-

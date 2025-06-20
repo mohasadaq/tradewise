@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { analyzeCryptoTrades, type AnalyzeCryptoTradesOutput, type AICoinAnalysisInputData } from "@/ai/flows/analyze-crypto-trades";
-import { fetchCoinData, type CryptoCoinData, type AppTimeFrame, fetchCoinList, type CoinListItem, fetchHistoricalCoinData, type HistoricalPricePoint, type TimeFrame as ApiTimeFrame } from "@/services/crypto-data-service";
+import { fetchCoinData, type CryptoCoinData, type AppTimeFrame, fetchCoinList, type CoinListItem, fetchHistoricalCoinData, type HistoricalPricePoint } from "@/services/crypto-data-service";
 import CryptoDataTable from "@/components/CryptoDataTable";
 import FilterSortControls, {
   type ConfidenceFilter,
@@ -20,7 +20,8 @@ import type { InitialPortfolioHoldingData } from "@/types/portfolio";
 import DashboardControls from "@/components/DashboardControls";
 import BacktestingModal from "@/components/backtesting/BacktestingModal";
 import type { BacktestConfiguration, BacktestResult } from "@/types/backtesting";
-import { runMACrossoverBacktest } from "@/services/backtesting-service";
+// Import the new AI strategy backtester
+import { runAIStrategyBacktest } from "@/services/backtesting-service"; 
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
   coinName: string; 
@@ -31,14 +32,18 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
   symbol?: string; 
   demandZone?: string;
   supplyZone?: string;
-  analysisTimeFrame?: TimeFrame; // Added to carry the analysis context
+  analysisTimeFrame?: TimeFrame;
 };
 
+// Updated to include AI recommendation parameters
 type CoinForBacktest = {
   id: string;
   name: string;
   symbol: string;
-  analysisTimeFrame?: TimeFrame; // Added for context
+  analysisTimeFrame?: TimeFrame;
+  aiSignal?: TradingRecommendation['signal'];
+  aiEntryPrice?: TradingRecommendation['entryPrice'];
+  aiExitPrice?: TradingRecommendation['exitPrice'];
 };
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
@@ -72,7 +77,6 @@ export default function TradeWisePage() {
   const [coinList, setCoinList] = useState<CoinListItem[]>([]);
   const [isCoinListLoading, setIsCoinListLoading] = useState(false);
 
-  // Backtesting State
   const [isBacktestingModalOpen, setIsBacktestingModalOpen] = useState(false);
   const [selectedCoinForBacktest, setSelectedCoinForBacktest] = useState<CoinForBacktest | null>(null);
   const [currentBacktestResults, setCurrentBacktestResults] = useState<BacktestResult | null>(null);
@@ -166,7 +170,7 @@ export default function TradeWisePage() {
             timeFrameAnalysisContext: rec.timeFrameAnalysisContext || "N/A",
             demandZone: rec.demandZone,
             supplyZone: rec.supplyZone,
-            analysisTimeFrame: currentTimeFrame, // Store the timeframe used for this analysis
+            analysisTimeFrame: currentTimeFrame, 
           };
         });
         setRecommendations(updatedRecommendations);
@@ -236,7 +240,6 @@ export default function TradeWisePage() {
     setSelectedCoinForPortfolio(null);
   };
 
-  // Backtesting Modal Handlers
   const handleInitiateBacktest = (coin: TradingRecommendation) => {
     if (!coin.id || !coin.symbol || !coin.coinName) {
         toast({title: "Error", description: "Cannot initiate backtest, essential coin data missing.", variant: "destructive"});
@@ -246,26 +249,42 @@ export default function TradeWisePage() {
         id: coin.id,
         name: coin.coinName,
         symbol: coin.symbol.toUpperCase(),
-        analysisTimeFrame: coin.analysisTimeFrame, // Pass the analysis timeframe
+        analysisTimeFrame: coin.analysisTimeFrame,
+        aiSignal: coin.signal,
+        aiEntryPrice: coin.entryPrice,
+        aiExitPrice: coin.exitPrice,
     });
     setCurrentBacktestResults(null); 
     setBacktestRunError(null); 
     setIsBacktestingModalOpen(true);
   };
 
-  const handleRunBacktestInModal = useCallback(async (config: BacktestConfiguration) => {
-    if (!selectedCoinForBacktest) return;
+  const handleRunBacktestInModal = useCallback(async (configFromForm: Omit<BacktestConfiguration, 'coinGeckoId' | 'aiSignal' | 'aiEntryPrice' | 'aiExitPrice'>) => {
+    if (!selectedCoinForBacktest || selectedCoinForBacktest.aiSignal === undefined) {
+      setBacktestRunError("Selected coin for backtest is missing AI recommendation details.");
+      toast({ title: "Backtest Error", description: "Missing AI recommendation details for the selected coin.", variant: "destructive"});
+      return;
+    }
 
     setIsBacktestRunInProgress(true);
     setBacktestRunError(null);
     setCurrentBacktestResults(null);
 
+    // Construct the full configuration for the backtesting service
+    const fullConfig: BacktestConfiguration = {
+      ...configFromForm,
+      coinGeckoId: selectedCoinForBacktest.id,
+      aiSignal: selectedCoinForBacktest.aiSignal,
+      aiEntryPrice: selectedCoinForBacktest.aiEntryPrice,
+      aiExitPrice: selectedCoinForBacktest.aiExitPrice,
+    };
+
     try {
       toast({ title: "Fetching Historical Data...", description: `For ${selectedCoinForBacktest.name}, this may take a moment.`});
       const historicalData: HistoricalPricePoint[] = await fetchHistoricalCoinData(
-        config.coinGeckoId,
-        config.startDate,
-        config.endDate
+        fullConfig.coinGeckoId,
+        fullConfig.startDate,
+        fullConfig.endDate
       );
 
       if (historicalData.length === 0) {
@@ -276,8 +295,9 @@ export default function TradeWisePage() {
         return;
       }
       
-      toast({ title: "Running Backtest...", description: `Simulating MA Crossover strategy for ${selectedCoinForBacktest.name}.`});
-      const results = runMACrossoverBacktest(config, historicalData);
+      toast({ title: "Running Backtest...", description: `Simulating AI's recommended strategy for ${selectedCoinForBacktest.name}.`});
+      // Use the new runAIStrategyBacktest function
+      const results = runAIStrategyBacktest(fullConfig, historicalData);
       
       setCurrentBacktestResults(results);
 
@@ -460,8 +480,7 @@ export default function TradeWisePage() {
                     setBacktestRunError(null);
                 }
             }}
-            coin={selectedCoinForBacktest}
-            coinList={coinList} 
+            coin={selectedCoinForBacktest} // Pass the extended coin object
             onRunBacktest={handleRunBacktestInModal}
             results={currentBacktestResults}
             isLoading={isBacktestRunInProgress}
@@ -471,4 +490,3 @@ export default function TradeWisePage() {
     </div>
   );
 }
-

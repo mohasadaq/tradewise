@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { TrendingUp, TrendingDown, MinusCircle, DollarSign, Percent, ListChecks, CandlestickChart, InfoIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle as UIAlertTitle } from "@/components/ui/alert"; // Renamed to avoid conflict
+import { Alert, AlertDescription, AlertTitle as UIAlertTitle } from "@/components/ui/alert"; 
 
 interface BacktestResultsDisplayProps {
   results: BacktestResult;
@@ -61,13 +61,28 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
                    : buyAndHoldProfitLossPercentage < 0 ? "text-destructive"
                    : "text-foreground";
 
+  // Determine if this was an AI recommendation backtest or MA crossover
+  const isAIRecommendationTest = config.aiSignal !== undefined;
+  const titleText = isAIRecommendationTest 
+    ? `Backtest Results: AI Recommendation for ${coinSymbol.toUpperCase()}`
+    : `Backtest Results: MA Crossover for ${coinSymbol.toUpperCase()}`;
+    // The MA part of title will be removed if config no longer holds MA periods.
+    // : `Backtest Results: MA Crossover for ${coinSymbol.toUpperCase()} (${config.shortMAPeriod}/${config.longMAPeriod} MA)`;
+
 
   return (
     <Card className="mt-6 shadow-lg">
       <CardHeader>
-        <CardTitle className="text-xl sm:text-2xl">Backtest Results: {coinSymbol.toUpperCase()} ({config.shortMAPeriod}/{config.longMAPeriod} MA)</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl">{titleText}</CardTitle>
         <CardDescription>
           Period: {format(config.startDate, "PPP")} - {format(config.endDate, "PPP")} | Initial Capital: {formatCurrency(config.initialCapital)}
+          {isAIRecommendationTest && config.aiSignal && (
+            <span className="block text-xs mt-1">
+              AI Signal: <span className="font-medium">{config.aiSignal}</span> | 
+              AI Entry: <span className="font-medium">{formatCurrency(config.aiEntryPrice, "N/A")}</span> | 
+              AI Exit: <span className="font-medium">{formatCurrency(config.aiExitPrice, "N/A")}</span>
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -79,7 +94,6 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
           </Alert>
         )}
 
-        {/* Summary Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card className="p-4 bg-card-foreground/5">
             <div className="flex items-center text-muted-foreground mb-1 text-sm">
@@ -90,19 +104,19 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
           <Card className="p-4 bg-card-foreground/5">
             <div className="flex items-center text-muted-foreground mb-1 text-sm">
               <ProfitLossIndicator value={totalProfitLoss} />
-              <span className="ml-2">Total Profit/Loss</span>
+              <span className="ml-2">Strategy Profit/Loss</span>
             </div>
             <p className={cn("text-xl sm:text-2xl font-semibold", plColor)}>{totalProfitLoss > 0 ? "+" : ""}{formatCurrency(totalProfitLoss)}</p>
           </Card>
           <Card className="p-4 bg-card-foreground/5">
             <div className="flex items-center text-muted-foreground mb-1 text-sm">
-              <Percent className="h-4 w-4 mr-2" /> Profit/Loss %
+              <Percent className="h-4 w-4 mr-2" /> Strategy P/L %
             </div>
             <p className={cn("text-xl sm:text-2xl font-semibold", plColor)}>{formatPercentage(profitLossPercentage)}</p>
           </Card>
           <Card className="p-4 bg-card-foreground/5">
             <div className="flex items-center text-muted-foreground mb-1 text-sm">
-              <ListChecks className="h-4 w-4 mr-2" /> Total Trades
+              <ListChecks className="h-4 w-4 mr-2" /> Total Trades (Strategy)
             </div>
             <p className="text-xl sm:text-2xl font-semibold">{totalTrades}</p>
           </Card>
@@ -116,10 +130,9 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
           )}
         </div>
 
-        {/* Trade Log */}
         {tradeLog.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold mb-3">Trade Log</h3>
+            <h3 className="text-lg font-semibold mb-3">Trade Log (Strategy)</h3>
             <ScrollArea className="h-[300px] w-full rounded-md border">
               <Table>
                 <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
@@ -154,11 +167,10 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
             </ScrollArea>
           </div>
         )}
-        {tradeLog.length === 0 && !statusMessage?.includes("Not enough historical data") && ( // Only show if not already covered by a status message
-            <p className="text-muted-foreground text-center py-4">No trades were executed during this backtest period with the given parameters.</p>
+        {tradeLog.length === 0 && !statusMessage?.includes("Not enough historical data") && ( 
+            <p className="text-muted-foreground text-center py-4">No trades were executed by the AI strategy during this backtest period with the given parameters.</p>
         )}
       </CardContent>
     </Card>
   );
 }
-

@@ -10,128 +10,111 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, DollarSign, Settings, RotateCcw, LineChart, InfoIcon } from 'lucide-react';
+import { CalendarIcon, DollarSign, Settings, RotateCcw, LineChart, InfoIcon, Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { format, subDays } from 'date-fns';
-import type { CoinListItem } from '@/services/crypto-data-service';
 import type { BacktestConfiguration } from '@/types/backtesting';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { TimeFrame } from '../FilterSortControls';
+import type { TradingRecommendation } from '@/app/page'; // Assuming this type is accessible
 
-const backtestConfigSchema = z.object({
-  coinGeckoId: z.string().min(1, "Coin ID is required for backtesting."),
+
+// Schema for AI Recommendation backtest form (MA params removed)
+const backtestConfigSchemaForAI = z.object({
   startDate: z.date({ required_error: "Start date is required." }),
   endDate: z.date({ required_error: "End date is required." }),
   initialCapital: z.number().positive("Initial capital must be positive.").min(1, "Initial capital must be at least 1."),
-  shortMAPeriod: z.number().int().positive("Short MA period must be a positive integer.").min(2, "Short MA must be at least 2."),
-  longMAPeriod: z.number().int().positive("Long MA period must be a positive integer.").min(5, "Long MA must be at least 5."),
 }).refine(data => data.startDate < data.endDate, {
   message: "End date must be after start date.",
   path: ["endDate"],
-}).refine(data => data.shortMAPeriod < data.longMAPeriod, {
-  message: "Short MA period must be less than Long MA period.",
-  path: ["longMAPeriod"],
 });
 
-export type BacktestConfigFormData = z.infer<typeof backtestConfigSchema>;
+export type BacktestConfigFormDataForAI = z.infer<typeof backtestConfigSchemaForAI>;
 
 interface BacktestConfigurationFormProps {
-  coinList: CoinListItem[]; 
-  onSubmit: (data: BacktestConfiguration) => void;
+  onSubmit: (data: BacktestConfigFormDataForAI) => void;
   isLoading: boolean;
-  defaultValues?: Partial<BacktestConfigFormData>;
-  initialCoin: { id: string; name: string; symbol: string; analysisTimeFrame?: TimeFrame }; // analysisTimeFrame added
+  defaultValues?: Partial<BacktestConfigFormDataForAI>; // Default values for date, capital
+  initialCoin: { // Includes AI recommendation details
+    id: string; 
+    name: string; 
+    symbol: string; 
+    analysisTimeFrame?: TimeFrame;
+    aiSignal?: TradingRecommendation['signal'];
+    aiEntryPrice?: TradingRecommendation['entryPrice'];
+    aiExitPrice?: TradingRecommendation['exitPrice'];
+  };
 }
 
-// Heuristic to get default MA periods based on analysis time frame
-const getDefaultMAPeriods = (analysisTimeFrame?: TimeFrame): { short: number; long: number } => {
-  switch (analysisTimeFrame) {
-    case '15m':
-    case '30m':
-      return { short: 7, long: 14 };
-    case '1h':
-      return { short: 10, long: 20 };
-    case '4h':
-      return { short: 12, long: 26 };
-    case '12h':
-    case '24h':
-      return { short: 20, long: 50 };
-    case '7d':
-    case '30d':
-      return { short: 50, long: 200 };
-    default: // Default if no analysisTimeFrame or unknown
-      return { short: 10, long: 30 };
-  }
-};
-
+const formatPriceNullable = (price: number | null | undefined) => {
+  if (price === null || price === undefined || isNaN(price)) return "N/A";
+  return `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 5 })}`;
+}
 
 export default function BacktestConfigurationForm({
-  coinList,
   onSubmit,
   isLoading,
   defaultValues,
   initialCoin
 }: BacktestConfigurationFormProps) {
-  const initialMAPeriods = getDefaultMAPeriods(initialCoin.analysisTimeFrame);
-
-  const { control, handleSubmit, reset, watch, formState: { errors } } = useForm<BacktestConfigFormData>({
-    resolver: zodResolver(backtestConfigSchema),
+  
+  const { control, handleSubmit, reset, watch, formState: { errors } } = useForm<BacktestConfigFormDataForAI>({
+    resolver: zodResolver(backtestConfigSchemaForAI),
     defaultValues: {
-      ...defaultValues,
-      coinGeckoId: initialCoin.id,
       startDate: defaultValues?.startDate || subDays(new Date(), 90),
       endDate: defaultValues?.endDate || subDays(new Date(), 1),
       initialCapital: defaultValues?.initialCapital || 10000,
-      shortMAPeriod: defaultValues?.shortMAPeriod || initialMAPeriods.short,
-      longMAPeriod: defaultValues?.longMAPeriod || initialMAPeriods.long,
     }
   });
 
   useEffect(() => {
-    const newDefaultMAPeriods = getDefaultMAPeriods(initialCoin.analysisTimeFrame);
     reset({
-      ...watch(), 
-      coinGeckoId: initialCoin.id,
-      startDate: watch('startDate') || subDays(new Date(), 90), // Preserve user changes if any
+      startDate: watch('startDate') || subDays(new Date(), 90),
       endDate: watch('endDate') || subDays(new Date(), 1),
       initialCapital: watch('initialCapital') || 10000,
-      // Only update MAs if they haven't been touched by the user from the initial heuristic defaults
-      // This check is a bit tricky with react-hook-form's defaultValues. A simpler approach for now:
-      // always reset to heuristic if initialCoin.analysisTimeFrame changes, or user explicitly resets.
-      // For more sophisticated "only if not touched", one might track if field is dirty.
-      shortMAPeriod: newDefaultMAPeriods.short,
-      longMAPeriod: newDefaultMAPeriods.long,
     });
-  }, [initialCoin.id, initialCoin.analysisTimeFrame, reset, watch]);
+  }, [initialCoin.id, reset, watch]);
 
 
-  const processSubmit: SubmitHandler<BacktestConfigFormData> = (data) => {
+  const processSubmit: SubmitHandler<BacktestConfigFormDataForAI> = (data) => {
     onSubmit(data);
   };
   
   const handleResetForm = () => {
-    const freshDefaultMAPeriods = getDefaultMAPeriods(initialCoin.analysisTimeFrame);
     reset({
-      coinGeckoId: initialCoin.id, 
       startDate: subDays(new Date(), 90),
       endDate: subDays(new Date(), 1),
       initialCapital: 10000,
-      shortMAPeriod: freshDefaultMAPeriods.short,
-      longMAPeriod: freshDefaultMAPeriods.long,
     });
   };
+
+  const SignalIcon = 
+    initialCoin.aiSignal?.toLowerCase() === 'buy' ? TrendingUp :
+    initialCoin.aiSignal?.toLowerCase() === 'sell' ? TrendingDown :
+    initialCoin.aiSignal?.toLowerCase() === 'hold' ? Minus :
+    Brain; // Default if signal is unusual
+
+  const signalColor = 
+    initialCoin.aiSignal?.toLowerCase() === 'buy' ? 'text-accent' :
+    initialCoin.aiSignal?.toLowerCase() === 'sell' ? 'text-destructive' :
+    'text-muted-foreground';
 
   return (
     <form onSubmit={handleSubmit(processSubmit)} className="space-y-4">
       <Alert variant="default" className="bg-muted/50">
         <InfoIcon className="h-4 w-4" />
-        <AlertTitle className="font-semibold">Backtesting: {initialCoin.name} ({initialCoin.symbol})</AlertTitle>
-        <AlertDescription className="text-xs">
-          Configure parameters to simulate the MA Crossover strategy for this coin.
-          {initialCoin.analysisTimeFrame && ` Default MA periods suggested based on ${initialCoin.analysisTimeFrame} analysis view.`}
+        <AlertTitle className="font-semibold">Backtesting AI Recommendation: {initialCoin.name} ({initialCoin.symbol})</AlertTitle>
+        <AlertDescription className="text-xs space-y-1 mt-1">
+          <p>Configure date range and capital. This will simulate trades based on the AI's following recommendation:</p>
+          <div className="pl-2 border-l-2 border-primary/50 text-xs space-y-0.5 py-1">
+            <p className="flex items-center"><SignalIcon className={`h-3.5 w-3.5 mr-1.5 ${signalColor}`} /> Signal: <span className={`font-medium ml-1 ${signalColor}`}>{initialCoin.aiSignal || "N/A"}</span></p>
+            <p>Entry Price: <span className="font-medium">{formatPriceNullable(initialCoin.aiEntryPrice)}</span></p>
+            <p>Exit Price: <span className="font-medium">{formatPriceNullable(initialCoin.aiExitPrice)}</span></p>
+            {initialCoin.analysisTimeFrame && <p>Analysis Time Frame: <span className="font-medium">{initialCoin.analysisTimeFrame}</span></p>}
+          </div>
         </AlertDescription>
       </Alert>
       
-      <Controller name="coinGeckoId" control={control} render={({ field }) => <input type="hidden" {...field} />} />
+      {/* coinGeckoId is passed implicitly through initialCoin and added in parent component */}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
         <div className="space-y-1">
@@ -218,58 +201,15 @@ export default function BacktestConfigurationForm({
         </div>
       </div>
       
-      <div className="space-y-3 pt-3 border-t border-border/30">
-        <h3 className="text-sm font-semibold flex items-center">
-          <Settings className="h-4 w-4 mr-1.5 text-primary" />
-          MA Crossover Parameters
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label htmlFor="shortMAPeriod" className="text-sm font-medium">Short MA Period</Label>
-            <Controller
-              name="shortMAPeriod"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="shortMAPeriod"
-                  type="number"
-                  placeholder="e.g. 10"
-                  className="bg-background text-sm h-9"
-                  value={field.value === undefined ? '' : String(field.value)}
-                  onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
-                />
-              )}
-            />
-            {errors.shortMAPeriod && <p className="text-xs text-destructive mt-1">{errors.shortMAPeriod.message}</p>}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="longMAPeriod" className="text-sm font-medium">Long MA Period</Label>
-            <Controller
-              name="longMAPeriod"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="longMAPeriod"
-                  type="number"
-                  placeholder="e.g. 30"
-                  className="bg-background text-sm h-9"
-                  value={field.value === undefined ? '' : String(field.value)}
-                  onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
-                />
-              )}
-            />
-            {errors.longMAPeriod && <p className="text-xs text-destructive mt-1">{errors.longMAPeriod.message}</p>}
-          </div>
-        </div>
-      </div>
+      {/* MA Crossover Parameters Removed for AI Recommendation Backtest */}
 
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-border/30 mt-4">
         <Button type="button" variant="outline" onClick={handleResetForm} disabled={isLoading} size="sm">
           <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-          Reset Parameters
+          Reset Dates/Capital
         </Button>
         <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground" size="sm">
-          {isLoading ? 'Running...' : 'Run Backtest'}
+          {isLoading ? 'Running...' : 'Run AI Backtest'}
         </Button>
       </div>
     </form>
