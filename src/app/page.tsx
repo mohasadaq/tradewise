@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { analyzeCryptoTrades, type AnalyzeCryptoTradesOutput, type AICoinAnalysisInputData } from "@/ai/flows/analyze-crypto-trades";
 import { fetchCoinData, type CryptoCoinData, type AppTimeFrame, fetchCoinList, type CoinListItem } from "@/services/crypto-data-service";
-import TradewiseHeader from "@/components/TradewiseHeader";
 import CryptoDataTable from "@/components/CryptoDataTable";
 import FilterSortControls, {
   type ConfidenceFilter,
@@ -18,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import AddHoldingDialog from "@/components/portfolio/AddHoldingDialog";
 import type { InitialPortfolioHoldingData } from "@/types/portfolio";
+import DashboardControls from "@/components/DashboardControls";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
   coinName: string; 
@@ -53,7 +53,6 @@ export default function TradeWisePage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>(DEFAULT_TIME_FRAME);
 
-  // For AddHoldingDialog
   const [isAddHoldingDialogOpen, setIsAddHoldingDialogOpen] = useState(false);
   const [selectedCoinForPortfolio, setSelectedCoinForPortfolio] = useState<InitialPortfolioHoldingData | null>(null);
   const [coinList, setCoinList] = useState<CoinListItem[]>([]);
@@ -114,8 +113,8 @@ export default function TradeWisePage() {
       }
       
       const aiInputData: AICoinAnalysisInputData[] = nonStableMarketData.map(md => ({
-        id: md.id, // This is CoinGecko ID
-        symbol: md.symbol, // This is ticker symbol (BTC)
+        id: md.id,
+        symbol: md.symbol,
         name: md.name,
         current_price: md.current_price,
         market_cap: md.market_cap,
@@ -134,8 +133,8 @@ export default function TradeWisePage() {
           );
           return {
             ...rec,
-            id: matchedMarketData?.id, // CoinGecko ID
-            symbol: matchedMarketData?.symbol, // Ticker symbol
+            id: matchedMarketData?.id,
+            symbol: matchedMarketData?.symbol,
             currentPrice: matchedMarketData?.current_price ?? rec.currentPrice,
             coinName: matchedMarketData?.name ?? rec.coinName,
             tradingStrategy: rec.tradingStrategy || "N/A",
@@ -207,8 +206,8 @@ export default function TradeWisePage() {
 
   const handleHoldingAdded = () => {
     setIsAddHoldingDialogOpen(false);
-    toast({ title: "Success", description: "Holding added to your portfolio." });
-    // Optionally, you might want to refresh portfolio data or navigate
+    // No success toast here as per guidelines for non-error toasts.
+    // User will see the holding added in their portfolio.
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
@@ -219,7 +218,7 @@ export default function TradeWisePage() {
         if (lowerCaseQuerySymbols.length > 0) {
             filtered = filtered.filter(rec =>
                 lowerCaseQuerySymbols.some(querySymbol =>
-                    rec.coin.toLowerCase().includes(querySymbol) || // AI output 'coin' is symbol
+                    rec.coin.toLowerCase().includes(querySymbol) || 
                     rec.coinName.toLowerCase().includes(querySymbol)
                 )
             );
@@ -294,13 +293,13 @@ export default function TradeWisePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <TradewiseHeader
-        lastUpdated={lastUpdated}
-        onRefresh={() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame)}
-        isRefreshing={isLoading}
-      />
+    <div className="flex flex-col min-h-[calc(100vh_-_var(--header-height,60px))]"> {/* Adjust min-height based on header */}
       <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-8 py-4 sm:py-8">
+        <DashboardControls
+           lastUpdated={lastUpdated}
+           onRefresh={() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame)}
+           isRefreshing={isLoading}
+        />
         <FilterSortControls
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}

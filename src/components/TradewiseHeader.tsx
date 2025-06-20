@@ -1,49 +1,19 @@
 
 "use client";
 
-import { RefreshCw, Bot, Briefcase } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import ClientOnly from "@/components/ClientOnly";
-import Link from "next/link";
+import { Bot } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
-interface TradewiseHeaderProps {
-  lastUpdated: Date | null;
-  onRefresh: () => void;
-  isRefreshing: boolean;
-}
-
-export default function TradewiseHeader({ lastUpdated, onRefresh, isRefreshing }: TradewiseHeaderProps) {
+export default function TradewiseHeader() {
   return (
-    <header className="py-4 px-2 sm:px-4 md:px-8 border-b border-border/50 shadow-md bg-card sticky top-0 z-50">
-      <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+    <header className="py-4 px-2 sm:px-4 md:px-8 border-b border-border/50 shadow-md bg-card sticky top-0 z-40"> {/* z-index lower than sidebar */}
+      <div className="container mx-auto flex items-center justify-between gap-3 sm:gap-0">
         <div className="flex items-center gap-2 sm:gap-3">
+          <SidebarTrigger className="md:hidden" /> {/* Only show on mobile, desktop uses rail/icon collapse */}
           <Bot className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
           <h1 className="text-2xl sm:text-3xl font-bold text-primary">TradeWise</h1>
         </div>
-        <div className="flex items-center gap-3 sm:gap-4">
-          <ClientOnly fallback={<span className="text-xs sm:text-sm text-muted-foreground">Loading...</span>}>
-            {lastUpdated && (
-              <span className="text-xs sm:text-sm text-muted-foreground">
-                Last Updated: {lastUpdated.toLocaleTimeString()}
-              </span>
-            )}
-          </ClientOnly>
-          <Link href="/portfolio" passHref>
-            <Button variant="outline" size="icon" aria-label="Portfolio" className="h-8 w-8 sm:h-9 sm:w-9">
-              <Briefcase className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            aria-label="Refresh Data"
-            className="h-8 w-8 sm:h-9 sm:w-9"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          </Button>
-        </div>
+        {/* Desktop sidebar trigger is part of the Sidebar component itself (rail) */}
       </div>
     </header>
   );
