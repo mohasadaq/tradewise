@@ -19,6 +19,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { ReactNode } from 'react';
+import { useIsMobile } from "@/hooks/use-mobile";
+import PortfolioListItem from "./PortfolioListItem";
+import SkeletonPortfolioListItem from "./SkeletonPortfolioListItem";
+
 
 interface PortfolioTableProps {
   holdings: EnrichedPortfolioHolding[];
@@ -71,8 +75,14 @@ const renderValueCellsForHolding = (holding: EnrichedPortfolioHolding): ReactNod
 };
 
 export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMarketData, onRefresh }: PortfolioTableProps) {
+  const isMobile = useIsMobile();
 
-  const renderSkeletonRowsForInitialLoad = (count: number): ReactNode[] => {
+  const renderSkeletonRowsForInitialLoad = (count: number, isMobileView: boolean): ReactNode[] => {
+    if (isMobileView) {
+      return Array.from({ length: count }).map((_, index) => (
+        <SkeletonPortfolioListItem key={`skel-mobile-initial-${index}`} />
+      ));
+    }
     return Array.from({ length: count }).map((_, index) => {
       const staticSkeletonCells: ReactNode[] = [
         <TableCell key={`skel-initial-${index}-name`}><Skeleton className="h-5 w-24" /></TableCell>,
@@ -92,6 +102,36 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
       );
     });
   };
+
+  if (isMobile) {
+    return (
+      <div className="mt-6 space-y-4">
+        <div className="flex justify-between items-center px-1 sm:px-0">
+          <h2 className="text-xl font-semibold">Your Holdings</h2>
+          <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoadingMarketData && holdings.length > 0}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingMarketData && holdings.length > 0 ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+        {isLoadingMarketData && holdings.length === 0 ? (
+          renderSkeletonRowsForInitialLoad(3, true)
+        ) : !isLoadingMarketData && holdings.length === 0 ? (
+          <div className="py-10 text-center text-muted-foreground">
+            You have no holdings in your portfolio.
+          </div>
+        ) : (
+          holdings.map((holding) => (
+            <PortfolioListItem 
+              key={holding.id} 
+              holding={holding} 
+              onRemoveHolding={onRemoveHolding} 
+              isLoadingMarketData={isLoadingMarketData && holding.currentPrice === undefined}
+            />
+          ))
+        )}
+      </div>
+    );
+  }
   
   return (
     <div className="mt-6 rounded-lg border shadow-md overflow-hidden bg-card">
@@ -120,7 +160,7 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
           </TableHeader>
           <TableBody>
             {isLoadingMarketData && holdings.length === 0 ? ( 
-              renderSkeletonRowsForInitialLoad(3)
+              renderSkeletonRowsForInitialLoad(3, false)
             ) : !isLoadingMarketData && holdings.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
@@ -170,3 +210,4 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
     </div>
   );
 }
+
