@@ -131,25 +131,23 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
           <div>
             <h3 className="text-lg font-semibold mb-3">Trade Log (Strategy)</h3>
             <ScrollArea className="h-[300px] w-full rounded-md border">
-              {/* The Table component from shadcn/ui already wraps the table in a div with overflow-auto.
-                  Adding min-w-max to the table itself ensures it can grow as needed. */}
               <Table className="min-w-[max-content]">
-                <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
+                <TableHeader className="sticky top-0 bg-muted z-10">
                   <TableRow>
-                    <TableHead className="w-[130px]">Date</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead className="w-[130px] text-left">Date</TableHead>
+                    <TableHead className="text-left">Type</TableHead>
                     <TableHead className="text-right">Price (USD)</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
                     <TableHead className="text-right">Cash After</TableHead>
                     <TableHead className="text-right">Coins Held</TableHead>
-                    <TableHead className="min-w-[250px] sm:min-w-[300px]">Reason</TableHead>
+                    <TableHead className="min-w-[300px] sm:min-w-[350px] text-left">Reason</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {tradeLog.map((trade, index) => (
                     <TableRow key={index}>
-                      <TableCell>{format(trade.date, "PP pp")}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-left">{format(trade.date, "PP pp")}</TableCell>
+                      <TableCell className="text-left">
                         <span className={cn(trade.type === 'Buy' ? 'text-accent' : 'text-destructive', "font-medium")}>
                           {trade.type}
                         </span>
@@ -158,7 +156,7 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
                       <TableCell className="text-right">{trade.quantity.toFixed(6)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(trade.cashAfterTrade)}</TableCell>
                       <TableCell className="text-right">{trade.coinsHeld.toFixed(6)}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{trade.reason}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground text-left">{trade.reason}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -173,4 +171,3 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
     </Card>
   );
 }
-
