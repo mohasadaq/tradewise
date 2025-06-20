@@ -11,11 +11,12 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarContent,
+  useSidebar, // Import useSidebar
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 
 export default function AppSidebarNavigation() {
   const pathname = usePathname();
+  const { setOpen, isMobile } = useSidebar(); // Get setOpen and isMobile from context
 
   const menuItems = [
     {
@@ -29,6 +30,13 @@ export default function AppSidebarNavigation() {
       icon: Briefcase,
     },
   ];
+
+  const handleLinkClick = () => {
+    if (!isMobile) {
+      setOpen(false); // Collapse sidebar on desktop after navigation
+    }
+    // On mobile, the Sheet component handles its own closing
+  };
 
   return (
     <>
@@ -47,7 +55,7 @@ export default function AppSidebarNavigation() {
                 isActive={pathname === item.href}
                 tooltip={{ children: item.label, side: "right", align: "center" }}
               >
-                <Link href={item.href}>
+                <Link href={item.href} onClick={handleLinkClick}>
                   <item.icon />
                   <span>{item.label}</span>
                 </Link>
