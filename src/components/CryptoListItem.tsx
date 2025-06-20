@@ -12,7 +12,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText, ShieldAlert, ClockIcon, DollarSign, PlusSquare, Loader2 } from "lucide-react";
+import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText, ShieldAlert, ClockIcon, PlusSquare, Loader2, TestTube2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
@@ -28,6 +28,7 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
 interface CryptoListItemProps {
   recommendation: TradingRecommendation;
   onAddToPortfolio: (coin: TradingRecommendation) => void;
+  onInitiateBacktest: (coin: TradingRecommendation) => void; // New prop
   isAddingToPortfolioPossible: boolean;
 }
 
@@ -103,7 +104,7 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
 };
 
 
-export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, isAddingToPortfolioPossible }: CryptoListItemProps) {
+export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, onInitiateBacktest, isAddingToPortfolioPossible }: CryptoListItemProps) {
   const potentialGainLoss = (typeof rec.exitPrice === 'number' && typeof rec.currentPrice === 'number') 
                               ? rec.exitPrice - rec.currentPrice 
                               : null;
@@ -215,11 +216,11 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
             </AccordionItem>
           </Accordion>
         </CardContent>
-        <CardFooter className="px-4 pb-3 pt-2 border-t">
+        <CardFooter className="px-4 pb-3 pt-2 border-t flex items-center gap-2">
             <Button 
                 variant="outline" 
                 size="sm" 
-                className="w-full"
+                className="flex-1"
                 onClick={() => onAddToPortfolio(rec)}
                 disabled={!isAddingToPortfolioPossible || !rec.id || !rec.symbol}
                 aria-label="Add to portfolio"
@@ -227,9 +228,19 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
                 {!isAddingToPortfolioPossible ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusSquare className="mr-2 h-4 w-4" />}
                 Add to Portfolio
             </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => onInitiateBacktest(rec)}
+                disabled={!rec.id || !rec.symbol}
+                aria-label="Backtest this coin"
+            >
+                <TestTube2 className="mr-2 h-4 w-4" />
+                Backtest
+            </Button>
         </CardFooter>
       </Card>
     </TooltipProvider>
   );
 }
-

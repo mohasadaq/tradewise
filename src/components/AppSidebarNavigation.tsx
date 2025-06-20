@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Briefcase, History } from "lucide-react"; // Added History icon
+import { LayoutDashboard, Briefcase } from "lucide-react"; // Removed History icon
 import {
   SidebarHeader,
   SidebarMenu,
@@ -13,7 +13,7 @@ import {
   SidebarContent,
   useSidebar, 
 } from "@/components/ui/sidebar";
-import { Bot } from "lucide-react"; // Ensured Bot icon is imported
+import { Bot } from "lucide-react";
 
 export default function AppSidebarNavigation() {
   const pathname = usePathname();
@@ -30,18 +30,13 @@ export default function AppSidebarNavigation() {
       label: "Portfolio",
       icon: Briefcase,
     },
-    {
-      href: "/backtesting", // New Backtesting menu item
-      label: "Backtesting",
-      icon: History,
-    },
+    // Removed Backtesting menu item
   ];
 
   const handleLinkClick = () => {
     if (isMobile) {
-      setOpenMobile(false); // Close sheet on mobile
+      setOpenMobile(false); 
     } else {
-      // If it was manually expanded by user, then clicking collapses it.
       if (sidebarOpen) {
         setOpen(false);
       }

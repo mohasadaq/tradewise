@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, Brain, ShieldAlert, ClockIcon, DollarSign, PlusSquare, Loader2 } from "lucide-react";
+import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, Brain, ShieldAlert, ClockIcon, PlusSquare, Loader2, TestTube2 } from "lucide-react";
 import type { AnalyzeCryptoTradesOutput } from "@/ai/flows/analyze-crypto-trades";
 import type { SortKey, SortDirection } from "./FilterSortControls";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,7 @@ interface CryptoDataTableProps {
   sortDirection: SortDirection;
   onSort: (key: SortKey) => void;
   onAddToPortfolio: (coin: TradingRecommendation) => void;
+  onInitiateBacktest: (coin: TradingRecommendation) => void; // New prop
   isAddingToPortfolioPossible: boolean;
 }
 
@@ -117,7 +118,7 @@ const formatPrice = (price: number | undefined | null) => {
   }
 };
 
-export default function CryptoDataTable({ recommendations, sortKey, sortDirection, onSort, onAddToPortfolio, isAddingToPortfolioPossible }: CryptoDataTableProps) {
+export default function CryptoDataTable({ recommendations, sortKey, sortDirection, onSort, onAddToPortfolio, onInitiateBacktest, isAddingToPortfolioPossible }: CryptoDataTableProps) {
   const isMobile = useIsMobile();
 
   const renderSortIcon = (key: SortKey) => {
@@ -158,6 +159,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
             key={`${rec.coin}-${rec.coinName}`} 
             recommendation={rec} 
             onAddToPortfolio={onAddToPortfolio}
+            onInitiateBacktest={onInitiateBacktest}
             isAddingToPortfolioPossible={isAddingToPortfolioPossible}
           />
         ))}
@@ -293,23 +295,42 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                           </Tooltip>
                       </TableCell>
                       <TableCell className="px-2 py-2 sm:px-4 sm:py-3 text-center">
-                        <Tooltip delayDuration={100}>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => onAddToPortfolio(rec)} 
-                              disabled={!isAddingToPortfolioPossible || !rec.id || !rec.symbol}
-                              className="h-7 w-7 sm:h-8 sm:w-8"
-                              aria-label="Add to portfolio"
-                            >
-                              {!isAddingToPortfolioPossible ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusSquare className="h-4 w-4 text-primary" />}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-popover text-popover-foreground p-2 rounded-md shadow-lg">
-                            <p className="text-xs">Add to Portfolio</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        <div className="flex items-center justify-center gap-1">
+                            <Tooltip delayDuration={100}>
+                            <TooltipTrigger asChild>
+                                <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => onAddToPortfolio(rec)} 
+                                disabled={!isAddingToPortfolioPossible || !rec.id || !rec.symbol}
+                                className="h-7 w-7 sm:h-8 sm:w-8"
+                                aria-label="Add to portfolio"
+                                >
+                                {!isAddingToPortfolioPossible ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusSquare className="h-4 w-4 text-primary" />}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-popover text-popover-foreground p-2 rounded-md shadow-lg">
+                                <p className="text-xs">Add to Portfolio</p>
+                            </TooltipContent>
+                            </Tooltip>
+                            <Tooltip delayDuration={100}>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => onInitiateBacktest(rec)}
+                                        disabled={!rec.id || !rec.symbol}
+                                        className="h-7 w-7 sm:h-8 sm:w-8"
+                                        aria-label="Backtest this coin"
+                                    >
+                                        <TestTube2 className="h-4 w-4 text-primary" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-popover text-popover-foreground p-2 rounded-md shadow-lg">
+                                    <p className="text-xs">Backtest Coin</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -321,4 +342,3 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     </TooltipProvider>
   );
 }
-

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { analyzeCryptoTrades, type AnalyzeCryptoTradesOutput, type AICoinAnalysisInputData } from "@/ai/flows/analyze-crypto-trades";
-import { fetchCoinData, type CryptoCoinData, type AppTimeFrame, fetchCoinList, type CoinListItem } from "@/services/crypto-data-service";
+import { fetchCoinData, type CryptoCoinData, type AppTimeFrame, fetchCoinList, type CoinListItem, fetchHistoricalCoinData, type HistoricalPricePoint } from "@/services/crypto-data-service";
 import CryptoDataTable from "@/components/CryptoDataTable";
 import FilterSortControls, {
   type ConfidenceFilter,
@@ -18,6 +18,9 @@ import { AlertTriangle } from "lucide-react";
 import AddHoldingDialog from "@/components/portfolio/AddHoldingDialog";
 import type { InitialPortfolioHoldingData } from "@/types/portfolio";
 import DashboardControls from "@/components/DashboardControls";
+import BacktestingModal from "@/components/backtesting/BacktestingModal";
+import type { BacktestConfiguration, BacktestResult } from "@/types/backtesting";
+import { runMACrossoverBacktest } from "@/services/backtesting-service";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
   coinName: string; 
@@ -28,6 +31,12 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
   symbol?: string; 
   demandZone?: string;
   supplyZone?: string;
+};
+
+type CoinForBacktest = {
+  id: string;
+  name: string;
+  symbol: string;
 };
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
@@ -57,8 +66,17 @@ export default function TradeWisePage() {
 
   const [isAddHoldingDialogOpen, setIsAddHoldingDialogOpen] = useState(false);
   const [selectedCoinForPortfolio, setSelectedCoinForPortfolio] = useState<InitialPortfolioHoldingData | null>(null);
+  
   const [coinList, setCoinList] = useState<CoinListItem[]>([]);
   const [isCoinListLoading, setIsCoinListLoading] = useState(false);
+
+  // Backtesting State
+  const [isBacktestingModalOpen, setIsBacktestingModalOpen] = useState(false);
+  const [selectedCoinForBacktest, setSelectedCoinForBacktest] = useState<CoinForBacktest | null>(null);
+  const [currentBacktestResults, setCurrentBacktestResults] = useState<BacktestResult | null>(null);
+  const [isBacktestRunInProgress, setIsBacktestRunInProgress] = useState(false);
+  const [backtestRunError, setBacktestRunError] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (coinList.length === 0 && !isCoinListLoading) {
@@ -66,8 +84,8 @@ export default function TradeWisePage() {
       fetchCoinList()
         .then(setCoinList)
         .catch(err => {
-          console.error("Error fetching coin list for dialog:", err);
-          toast({ title: "Dialog Error", description: "Could not load coin list for adding holdings.", variant: "destructive" });
+          console.error("Error fetching coin list:", err);
+          toast({ title: "Coin List Error", description: "Could not load coin list. Some features might be affected.", variant: "destructive" });
         })
         .finally(() => setIsCoinListLoading(false));
     }
@@ -212,7 +230,63 @@ export default function TradeWisePage() {
 
   const handleHoldingAdded = () => {
     setIsAddHoldingDialogOpen(false);
+    setSelectedCoinForPortfolio(null);
   };
+
+  // Backtesting Modal Handlers
+  const handleInitiateBacktest = (coin: TradingRecommendation) => {
+    if (!coin.id || !coin.symbol || !coin.coinName) {
+        toast({title: "Error", description: "Cannot initiate backtest, essential coin data missing.", variant: "destructive"});
+        return;
+    }
+    setSelectedCoinForBacktest({
+        id: coin.id,
+        name: coin.coinName,
+        symbol: coin.symbol.toUpperCase() // Ensure symbol is uppercase for display consistency
+    });
+    setCurrentBacktestResults(null); // Reset previous results
+    setBacktestRunError(null); // Reset previous errors
+    setIsBacktestingModalOpen(true);
+  };
+
+  const handleRunBacktestInModal = useCallback(async (config: BacktestConfiguration) => {
+    if (!selectedCoinForBacktest) return;
+
+    setIsBacktestRunInProgress(true);
+    setBacktestRunError(null);
+    setCurrentBacktestResults(null);
+
+    try {
+      toast({ title: "Fetching Historical Data...", description: `For ${selectedCoinForBacktest.name}, this may take a moment.`});
+      const historicalData: HistoricalPricePoint[] = await fetchHistoricalCoinData(
+        config.coinGeckoId, // This comes from the form, should match selectedCoinForBacktest.id
+        config.startDate,
+        config.endDate
+      );
+
+      if (historicalData.length === 0) {
+        throw new Error("No historical data found for the selected coin and date range.");
+      }
+      
+      toast({ title: "Running Backtest...", description: `Simulating MA Crossover strategy for ${selectedCoinForBacktest.name}.`});
+      const results = runMACrossoverBacktest(config, historicalData);
+      setCurrentBacktestResults(results);
+      toast({ title: "Backtest Complete!", description: `Results for ${selectedCoinForBacktest.name} are now displayed.`});
+
+    } catch (err) {
+      console.error("Error during backtest:", err);
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during the backtest.";
+      setBacktestRunError(errorMessage);
+      toast({
+        title: "Backtest Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsBacktestRunInProgress(false);
+    }
+  }, [selectedCoinForBacktest, toast]);
+
 
   const filteredAndSortedRecommendations = useMemo(() => {
     let filtered = [...recommendations];
@@ -337,6 +411,7 @@ export default function TradeWisePage() {
             sortDirection={sortDirection}
             onSort={handleSort}
             onAddToPortfolio={handleOpenAddHoldingDialog}
+            onInitiateBacktest={handleInitiateBacktest}
             isAddingToPortfolioPossible={!isCoinListLoading}
           />
         )}
@@ -344,6 +419,7 @@ export default function TradeWisePage() {
       <footer className="py-3 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/50">
         TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Stablecoins are excluded. Data from <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">CoinGecko</a>.
       </footer>
+      
       <AddHoldingDialog
           isOpen={isAddHoldingDialogOpen}
           setIsOpen={setIsAddHoldingDialogOpen}
@@ -351,7 +427,26 @@ export default function TradeWisePage() {
           coinList={coinList}
           initialCoinData={selectedCoinForPortfolio}
       />
+
+      {selectedCoinForBacktest && (
+        <BacktestingModal
+            isOpen={isBacktestingModalOpen}
+            setIsOpen={(isOpen) => {
+                setIsBacktestingModalOpen(isOpen);
+                if (!isOpen) { // Reset states when modal is closed
+                    setSelectedCoinForBacktest(null);
+                    setCurrentBacktestResults(null);
+                    setBacktestRunError(null);
+                }
+            }}
+            coin={selectedCoinForBacktest}
+            coinList={coinList} // Pass full coinList for the form's dropdown (though it will be disabled)
+            onRunBacktest={handleRunBacktestInModal}
+            results={currentBacktestResults}
+            isLoading={isBacktestRunInProgress}
+            error={backtestRunError}
+        />
+      )}
     </div>
   );
 }
-
