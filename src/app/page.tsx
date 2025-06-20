@@ -3,25 +3,29 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { analyzeCryptoTrades, type AnalyzeCryptoTradesOutput, type AICoinAnalysisInputData } from "@/ai/flows/analyze-crypto-trades";
-import { fetchCoinData, type CryptoCoinData, type AppTimeFrame } from "@/services/crypto-data-service"; // Import AppTimeFrame
+import { fetchCoinData, type CryptoCoinData, type AppTimeFrame, fetchCoinList, type CoinListItem } from "@/services/crypto-data-service";
 import TradewiseHeader from "@/components/TradewiseHeader";
 import CryptoDataTable from "@/components/CryptoDataTable";
 import FilterSortControls, {
   type ConfidenceFilter,
   type SortKey,
   type SortDirection,
-  type TimeFrame, // This will now be AppTimeFrame via FilterSortControls
+  type TimeFrame,
 } from "@/components/FilterSortControls";
 import SkeletonTable from "@/components/SkeletonTable";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import AddHoldingDialog from "@/components/portfolio/AddHoldingDialog";
+import type { InitialPortfolioHoldingData } from "@/types/portfolio";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
   coinName: string; 
   tradingStrategy?: string; 
   riskManagementNotes?: string;
   timeFrameAnalysisContext?: string; 
+  id?: string; // For mapping to AICoinAnalysisInputData
+  symbol?: string; // For mapping
 };
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
@@ -49,6 +53,24 @@ export default function TradeWisePage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>(DEFAULT_TIME_FRAME);
 
+  // For AddHoldingDialog
+  const [isAddHoldingDialogOpen, setIsAddHoldingDialogOpen] = useState(false);
+  const [selectedCoinForPortfolio, setSelectedCoinForPortfolio] = useState<InitialPortfolioHoldingData | null>(null);
+  const [coinList, setCoinList] = useState<CoinListItem[]>([]);
+  const [isCoinListLoading, setIsCoinListLoading] = useState(false);
+
+  useEffect(() => {
+    setIsCoinListLoading(true);
+    fetchCoinList()
+      .then(setCoinList)
+      .catch(err => {
+        console.error("Error fetching coin list for dialog:", err);
+        toast({ title: "Dialog Error", description: "Could not load coin list for adding holdings.", variant: "destructive" });
+      })
+      .finally(() => setIsCoinListLoading(false));
+  }, [toast]);
+
+
   const performAnalysis = useCallback(async (symbolsToFetch?: string, timeFrameToUse?: TimeFrame, isAutoRefresh: boolean = false) => {
     setIsLoading(true);
     setError(null);
@@ -71,8 +93,9 @@ export default function TradeWisePage() {
         setRecommendations([]);
         const message = isSearchingSpecificSymbols ? `No market data found for symbols: ${currentSymbols} (${currentTimeFrame} view). Please check symbols/timeframe.` : `No market data found for top coins (${currentTimeFrame} view).`;
         setError(message);
-        const errorTitle = isAutoRefresh ? "Auto-Refresh: Market Data Error" : "Market Data Error";
-        toast({ title: errorTitle, description: message, variant: "destructive" });
+        if (!isAutoRefresh) {
+            toast({ title: "Market Data Error", description: message, variant: "destructive" });
+        }
         setIsLoading(false);
         return;
       }
@@ -83,15 +106,16 @@ export default function TradeWisePage() {
         setRecommendations([]);
         const message = isSearchingSpecificSymbols ? `No non-stablecoin market data found for symbols: ${currentSymbols} (${currentTimeFrame} view).` : `No non-stablecoins found for analysis among top coins (${currentTimeFrame} view).`;
         setError(message);
-        const errorTitle = isAutoRefresh ? "Auto-Refresh: No Coins for Analysis" : "No Coins for Analysis";
-        toast({ title: errorTitle, description: message, variant: "destructive" });
+        if (!isAutoRefresh) {
+            toast({ title: "No Coins for Analysis", description: message, variant: "destructive" });
+        }
         setIsLoading(false);
         return;
       }
       
       const aiInputData: AICoinAnalysisInputData[] = nonStableMarketData.map(md => ({
-        id: md.id,
-        symbol: md.symbol,
+        id: md.id, // This is CoinGecko ID
+        symbol: md.symbol, // This is ticker symbol (BTC)
         name: md.name,
         current_price: md.current_price,
         market_cap: md.market_cap,
@@ -101,7 +125,6 @@ export default function TradeWisePage() {
       }));
 
       const input = { coinsData: aiInputData };
-
       const result = await analyzeCryptoTrades(input);
 
       if (result && result.tradingRecommendations) {
@@ -111,6 +134,8 @@ export default function TradeWisePage() {
           );
           return {
             ...rec,
+            id: matchedMarketData?.id, // CoinGecko ID
+            symbol: matchedMarketData?.symbol, // Ticker symbol
             currentPrice: matchedMarketData?.current_price ?? rec.currentPrice,
             coinName: matchedMarketData?.name ?? rec.coinName,
             tradingStrategy: rec.tradingStrategy || "N/A",
@@ -124,8 +149,9 @@ export default function TradeWisePage() {
         setRecommendations([]);
         const message = `No recommendations found or unexpected response from AI for ${analysisTargetDescription} ${timeFrameDescription}.`;
         setError(message);
-        const errorTitle = isAutoRefresh ? "Auto-Refresh: Analysis Issue" : "Analysis Issue";
-        toast({ title: errorTitle, description: message, variant: "destructive" });
+        if (!isAutoRefresh) {
+            toast({ title: "Analysis Issue", description: message, variant: "destructive" });
+        }
       }
     } catch (err) {
       console.error("Error performing analysis:", err);
@@ -133,9 +159,10 @@ export default function TradeWisePage() {
       const fullErrorMessage = `Analysis failed for ${analysisTargetDescription} ${timeFrameDescription}: ${errorMessage}`;
       setError(fullErrorMessage);
       setRecommendations([]);
-      const errorTitle = isAutoRefresh ? "Auto-Refresh: Analysis Failed" : "Analysis Failed";
-      const toastErrorMessage = isAutoRefresh ? `Auto-refresh: ${errorMessage}`: `Error: ${errorMessage}`;
-      toast({ title: errorTitle, description: toastErrorMessage, variant: "destructive" });
+      if (!isAutoRefresh) {
+          const toastErrorMessage = `Error: ${errorMessage}`;
+          toast({ title: "Analysis Failed", description: toastErrorMessage, variant: "destructive" });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +171,7 @@ export default function TradeWisePage() {
   useEffect(() => {
     performAnalysis(undefined, DEFAULT_TIME_FRAME, false); 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only on mount
+  }, []); 
 
   useEffect(() => {
     const intervalId = setInterval(() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame, true), REFRESH_INTERVAL);
@@ -164,6 +191,26 @@ export default function TradeWisePage() {
     performAnalysis(undefined, DEFAULT_TIME_FRAME);
   };
 
+  const handleOpenAddHoldingDialog = (coin: TradingRecommendation) => {
+    if (!coin.id || !coin.symbol || !coin.coinName) {
+        toast({title: "Error", description: "Cannot add coin to portfolio, essential data missing.", variant: "destructive"});
+        return;
+    }
+    setSelectedCoinForPortfolio({
+      coinGeckoId: coin.id, 
+      name: coin.coinName,
+      symbol: coin.symbol,
+      currentPrice: coin.currentPrice,
+    });
+    setIsAddHoldingDialogOpen(true);
+  };
+
+  const handleHoldingAdded = () => {
+    setIsAddHoldingDialogOpen(false);
+    toast({ title: "Success", description: "Holding added to your portfolio." });
+    // Optionally, you might want to refresh portfolio data or navigate
+  };
+
   const filteredAndSortedRecommendations = useMemo(() => {
     let filtered = [...recommendations];
 
@@ -172,7 +219,7 @@ export default function TradeWisePage() {
         if (lowerCaseQuerySymbols.length > 0) {
             filtered = filtered.filter(rec =>
                 lowerCaseQuerySymbols.some(querySymbol =>
-                    rec.coin.toLowerCase().includes(querySymbol) ||
+                    rec.coin.toLowerCase().includes(querySymbol) || // AI output 'coin' is symbol
                     rec.coinName.toLowerCase().includes(querySymbol)
                 )
             );
@@ -286,13 +333,21 @@ export default function TradeWisePage() {
             sortKey={sortKey}
             sortDirection={sortDirection}
             onSort={handleSort}
+            onAddToPortfolio={handleOpenAddHoldingDialog}
+            isAddingToPortfolioPossible={!isCoinListLoading}
           />
         )}
       </main>
       <footer className="py-4 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/50">
         TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Stablecoins are excluded. Data from <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">CoinGecko</a>.
       </footer>
+      <AddHoldingDialog
+          isOpen={isAddHoldingDialogOpen}
+          setIsOpen={setIsAddHoldingDialogOpen}
+          onHoldingAdded={handleHoldingAdded}
+          coinList={coinList}
+          initialCoinData={selectedCoinForPortfolio}
+      />
     </div>
   );
 }
-

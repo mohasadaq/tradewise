@@ -2,8 +2,9 @@
 "use client";
 
 import type { AnalyzeCryptoTradesOutput } from "@/ai/flows/analyze-crypto-trades";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -11,17 +12,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText, ShieldAlert, ClockIcon, DollarSign } from "lucide-react";
+import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText, ShieldAlert, ClockIcon, DollarSign, PlusSquare, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
   tradingStrategy?: string; 
   riskManagementNotes?: string;
   timeFrameAnalysisContext?: string;
+  id?: string; // CoinGecko ID
+  symbol?: string; // Ticker Symbol
 };
 
 interface CryptoListItemProps {
   recommendation: TradingRecommendation;
+  onAddToPortfolio: (coin: TradingRecommendation) => void;
+  isAddingToPortfolioPossible: boolean;
 }
 
 const formatPrice = (price: number | undefined | null) => {
@@ -96,7 +101,7 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
 };
 
 
-export default function CryptoListItem({ recommendation: rec }: CryptoListItemProps) {
+export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, isAddingToPortfolioPossible }: CryptoListItemProps) {
   const potentialGainLoss = (typeof rec.exitPrice === 'number' && typeof rec.currentPrice === 'number') 
                               ? rec.exitPrice - rec.currentPrice 
                               : null;
@@ -120,7 +125,7 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
             <ConfidenceBadge level={rec.confidenceLevel} />
           </div>
         </CardHeader>
-        <CardContent className="px-4 pb-4 text-sm space-y-3">
+        <CardContent className="px-4 pb-3 text-sm space-y-3">
           <div className="grid grid-cols-3 gap-x-3 gap-y-2">
             <div>
               <p className="text-muted-foreground text-xs">Current Price:</p>
@@ -212,6 +217,19 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
             </AccordionItem>
           </Accordion>
         </CardContent>
+        <CardFooter className="px-4 pb-3 pt-2 border-t">
+            <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => onAddToPortfolio(rec)}
+                disabled={!isAddingToPortfolioPossible || !rec.id || !rec.symbol}
+                aria-label="Add to portfolio"
+            >
+                {!isAddingToPortfolioPossible ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusSquare className="mr-2 h-4 w-4" />}
+                Add to Portfolio
+            </Button>
+        </CardFooter>
       </Card>
     </TooltipProvider>
   );

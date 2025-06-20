@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, Brain, ShieldAlert, ClockIcon, DollarSign } from "lucide-react";
+import { ArrowUpDown, Info, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, Brain, ShieldAlert, ClockIcon, DollarSign, PlusSquare, Loader2 } from "lucide-react";
 import type { AnalyzeCryptoTradesOutput } from "@/ai/flows/analyze-crypto-trades";
 import type { SortKey, SortDirection } from "./FilterSortControls";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,8 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
   tradingStrategy?: string; 
   riskManagementNotes?: string;
   timeFrameAnalysisContext?: string;
+  id?: string; // CoinGecko ID
+  symbol?: string; // Ticker Symbol
 };
 
 interface CryptoDataTableProps {
@@ -35,6 +37,8 @@ interface CryptoDataTableProps {
   sortKey: SortKey;
   sortDirection: SortDirection;
   onSort: (key: SortKey) => void;
+  onAddToPortfolio: (coin: TradingRecommendation) => void;
+  isAddingToPortfolioPossible: boolean;
 }
 
 const ConfidenceBadge = ({ level }: { level: string }) => {
@@ -111,7 +115,7 @@ const formatPrice = (price: number | undefined | null) => {
   }
 };
 
-export default function CryptoDataTable({ recommendations, sortKey, sortDirection, onSort }: CryptoDataTableProps) {
+export default function CryptoDataTable({ recommendations, sortKey, sortDirection, onSort, onAddToPortfolio, isAddingToPortfolioPossible }: CryptoDataTableProps) {
   const isMobile = useIsMobile();
 
   const renderSortIcon = (key: SortKey) => {
@@ -134,6 +138,7 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     { key: null, label: "Indicators" },
     { key: null, label: "Order Book" },
     { key: null, label: "TF Context" },
+    { key: null, label: "Actions"},
   ] as const;
 
   if (isMobile) {
@@ -147,7 +152,12 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     return (
       <div className="space-y-0">
         {recommendations.map((rec) => (
-          <CryptoListItem key={`${rec.coin}-${rec.coinName}`} recommendation={rec} />
+          <CryptoListItem 
+            key={`${rec.coin}-${rec.coinName}`} 
+            recommendation={rec} 
+            onAddToPortfolio={onAddToPortfolio}
+            isAddingToPortfolioPossible={isAddingToPortfolioPossible}
+          />
         ))}
       </div>
     );
@@ -280,6 +290,25 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
                           </TooltipContent>
                           </Tooltip>
                       </TableCell>
+                      <TableCell className="px-2 py-2 sm:px-4 sm:py-3 text-center">
+                        <Tooltip delayDuration={100}>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => onAddToPortfolio(rec)} 
+                              disabled={!isAddingToPortfolioPossible || !rec.id || !rec.symbol}
+                              className="h-7 w-7 sm:h-8 sm:w-8"
+                              aria-label="Add to portfolio"
+                            >
+                              {!isAddingToPortfolioPossible ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusSquare className="h-4 w-4 text-primary" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-popover text-popover-foreground p-2 rounded-md shadow-lg">
+                            <p className="text-xs">Add to Portfolio</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -290,4 +319,3 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     </TooltipProvider>
   );
 }
-

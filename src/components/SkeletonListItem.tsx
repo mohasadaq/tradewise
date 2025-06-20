@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SkeletonListItem() {
@@ -16,7 +16,7 @@ export default function SkeletonListItem() {
           <Skeleton className="h-6 w-20 rounded-full" /> {/* Confidence Badge */}
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-4 text-sm space-y-3">
+      <CardContent className="px-4 pb-3 text-sm space-y-3">
         <div className="grid grid-cols-3 gap-x-3 gap-y-2">
             <div>
                 <Skeleton className="h-3 w-20 mb-1" /> {/* Label Current Price */}
@@ -50,6 +50,9 @@ export default function SkeletonListItem() {
             <Skeleton className="h-5 w-1/2" /> {/* Risk Management Trigger */}
         </div>
       </CardContent>
+      <CardFooter className="px-4 pb-3 pt-2 border-t">
+        <Skeleton className="h-9 w-full rounded-md" /> {/* Add to Portfolio Button */}
+      </CardFooter>
     </Card>
   );
 }

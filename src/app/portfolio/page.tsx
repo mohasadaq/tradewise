@@ -19,36 +19,42 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 export default function PortfolioPage() {
   const [holdings, setHoldings] = useState<PortfolioHolding[]>([]);
   const [enrichedHoldings, setEnrichedHoldings] = useState<EnrichedPortfolioHolding[]>([]);
-  const [coinList, setCoinList] = useState<CoinListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [coinListForDialog, setCoinListForDialog] = useState<CoinListItem[]>([]);
+  
   const [isMarketDataLoading, setIsMarketDataLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isDialogCoinListLoading, setIsDialogCoinListLoading] = useState(false);
+  const [pageError, setPageError] = useState<string | null>(null); // For critical page errors
+  const [marketDataError, setMarketDataError] = useState<string | null>(null); // For non-critical market data fetch errors
+  
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const loadHoldings = useCallback(() => {
+  const loadHoldingsFromStorage = useCallback(() => {
     const currentHoldings = getPortfolioHoldings();
     setHoldings(currentHoldings);
+    // Initialize enrichedHoldings with basic data, prices will be fetched
+    setEnrichedHoldings(currentHoldings.map(h => ({ ...h })));
   }, []);
 
   const fetchMarketDataForHoldings = useCallback(async (currentHoldings: PortfolioHolding[]) => {
     if (currentHoldings.length === 0) {
-      setEnrichedHoldings([]);
+      setEnrichedHoldings([]); // Ensure enrichedHoldings is empty if holdings are empty
       setIsMarketDataLoading(false);
       return;
     }
 
     setIsMarketDataLoading(true);
-    setError(null);
+    setMarketDataError(null);
     try {
       const coinGeckoIds = [...new Set(currentHoldings.map(h => h.coinGeckoId))].join(',');
       if (!coinGeckoIds) {
-          setEnrichedHoldings(currentHoldings.map(h => ({...h}))); // No prices if no IDs
+          // This case should ideally not happen if currentHoldings.length > 0
+          setEnrichedHoldings(currentHoldings.map(h => ({...h}))); 
           setIsMarketDataLoading(false);
           return;
       }
 
-      const marketDataArray: CryptoCoinData[] = await fetchCoinData(0, coinGeckoIds, "24h"); // Using 24h for general price
+      const marketDataArray: CryptoCoinData[] = await fetchCoinData(0, coinGeckoIds, "24h"); 
       const marketDataMap = new Map(marketDataArray.map(md => [md.id, md]));
 
       const newEnrichedHoldings = currentHoldings.map(holding => {
@@ -75,45 +81,53 @@ export default function PortfolioPage() {
     } catch (err) {
       console.error("Error fetching market data for portfolio:", err);
       const errorMessage = err instanceof Error ? err.message : "Unknown error fetching market data.";
-      setError(`Failed to load market prices: ${errorMessage}`);
-      toast({ title: "Market Data Error", description: `Could not fetch prices for portfolio: ${errorMessage}`, variant: "destructive" });
+      setMarketDataError(`Failed to load market prices: ${errorMessage}`);
+      // Do not toast here as it might be too frequent, rely on UI error display
       // Keep existing holding data but prices might be stale or missing
       setEnrichedHoldings(currentHoldings.map(h => ({ ...h, currentPrice: undefined, currentValue: undefined, profitLoss: undefined, profitLossPercentage: undefined })));
     } finally {
       setIsMarketDataLoading(false);
     }
-  }, [toast]);
+  }, []);
 
+  // Load holdings from localStorage on mount
   useEffect(() => {
-    loadHoldings();
-    setIsLoading(true); // For initial coinList fetch
+    loadHoldingsFromStorage();
+  }, [loadHoldingsFromStorage]);
+
+  // Fetch coin list for the dialog on mount
+  useEffect(() => {
+    setIsDialogCoinListLoading(true);
     fetchCoinList()
-      .then(list => setCoinList(list))
+      .then(list => setCoinListForDialog(list))
       .catch(err => {
         console.error("Error fetching coin list for dialog:", err);
+        setPageError("Could not load coin list. Adding new holdings might be affected.");
         toast({ title: "Error", description: "Could not load coin list for adding new holdings.", variant: "destructive" });
       })
-      .finally(() => setIsLoading(false)); // Combined loading for initial holdings and coin list
-  }, [loadHoldings, toast]);
+      .finally(() => setIsDialogCoinListLoading(false));
+  }, [toast]);
 
+  // Fetch market data when holdings change
   useEffect(() => {
     if (holdings.length > 0) {
       fetchMarketDataForHoldings(holdings);
     } else {
-      setEnrichedHoldings([]); // Clear enriched holdings if no base holdings
+      setEnrichedHoldings([]); // Clear enriched if no holdings
+      setMarketDataError(null); // Clear market data error if no holdings
     }
   }, [holdings, fetchMarketDataForHoldings]);
 
 
   const handleHoldingAdded = () => {
-    loadHoldings(); // Reloads holdings which triggers market data fetch
+    loadHoldingsFromStorage(); // Reloads holdings which triggers market data fetch
     setIsAddDialogOpen(false);
     toast({ title: "Success", description: "New holding added to your portfolio." });
   };
 
   const handleRemoveHolding = (holdingId: string) => {
     removePortfolioHolding(holdingId);
-    loadHoldings(); // Reload and re-fetch market data
+    loadHoldingsFromStorage(); 
     toast({ title: "Holding Removed", description: "The holding has been removed from your portfolio." });
   };
   
@@ -133,12 +147,17 @@ export default function PortfolioPage() {
   );
   
   const totalProfitLossPercentage = useMemo(() => {
-    if (totalPortfolioCost === 0) return 0;
+    if (totalPortfolioCost === 0 && totalPortfolioValue === 0) return 0; // No holdings or all free
+    if (totalPortfolioCost === 0 && totalPortfolioValue !== 0) return Infinity; // Gained from free assets
     return (totalProfitLoss / totalPortfolioCost) * 100;
-  }, [totalProfitLoss, totalPortfolioCost]);
+  }, [totalProfitLoss, totalPortfolioCost, totalPortfolioValue]);
+
+  // Overall loading state for the entire page structure (not data within table)
+  // This is true if we don't even have basic holdings from storage yet.
+  const isPageStructureLoading = holdings.length === 0 && enrichedHoldings.length === 0 && isMarketDataLoading;
 
 
-  if (isLoading && holdings.length === 0) { // Initial page load, fetching coin list
+  if (isPageStructureLoading && !pageError) { 
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-150px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -154,40 +173,50 @@ export default function PortfolioPage() {
           isOpen={isAddDialogOpen}
           setIsOpen={setIsAddDialogOpen}
           onHoldingAdded={handleHoldingAdded}
-          coinList={coinList}
-        >
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Holding
-          </Button>
-        </AddHoldingDialog>
+          coinList={coinListForDialog}
+          triggerButton={
+            <Button disabled={isDialogCoinListLoading}>
+              {isDialogCoinListLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />} 
+              Add Holding
+            </Button>
+          }
+        />
       </div>
 
-      {error && (
+      {pageError && (
         <Alert variant="destructive" className="mb-6">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertTitle>Page Error</AlertTitle>
+          <AlertDescription>{pageError}</AlertDescription>
         </Alert>
       )}
       
-      {enrichedHoldings.length > 0 && (
+      {marketDataError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Market Data Error</AlertTitle>
+          <AlertDescription>{marketDataError} Prices might be outdated or unavailable.</AlertDescription>
+        </Alert>
+      )}
+      
+      {(holdings.length > 0 || isMarketDataLoading) && ( // Show summary if there are holdings or if we are loading market data for them
         <PortfolioSummaryCard 
           totalValue={totalPortfolioValue}
           totalCost={totalPortfolioCost}
           totalProfitLoss={totalProfitLoss}
           totalProfitLossPercentage={totalProfitLossPercentage}
-          isLoading={isMarketDataLoading}
+          isLoading={isMarketDataLoading && holdings.length > 0} // Only show skeleton in summary if there are holdings to load prices for
         />
       )}
 
       <PortfolioTable
-        holdings={enrichedHoldings}
+        holdings={enrichedHoldings} // Pass enriched (or basic if prices not yet loaded)
         onRemoveHolding={handleRemoveHolding}
-        isLoading={isMarketDataLoading && holdings.length > 0}
-        onRefresh={() => fetchMarketDataForHoldings(holdings)}
+        isLoadingMarketData={isMarketDataLoading && holdings.length > 0} // Skeleton for price cells if loading for existing holdings
+        onRefresh={() => holdings.length > 0 ? fetchMarketDataForHoldings(holdings) : {}}
       />
 
-      {holdings.length === 0 && !isLoading && (
+      {holdings.length === 0 && !isMarketDataLoading && !isDialogCoinListLoading && ( // Show if no holdings and not in any loading state
          <Card className="mt-6">
             <CardHeader>
                 <CardTitle className="text-center">Your Portfolio is Empty</CardTitle>

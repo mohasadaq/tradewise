@@ -3,7 +3,7 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
+import { Trash2, RefreshCw } from "lucide-react";
 import type { EnrichedPortfolioHolding } from "@/types/portfolio";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,7 +22,7 @@ import {
 interface PortfolioTableProps {
   holdings: EnrichedPortfolioHolding[];
   onRemoveHolding: (holdingId: string) => void;
-  isLoading: boolean;
+  isLoadingMarketData: boolean; // Specifically for loading market-dependent data (prices, values)
   onRefresh: () => void;
 }
 
@@ -43,19 +43,47 @@ const formatPercentage = (percentage: number | undefined | null) => {
   return `${percentage.toFixed(2)}%`;
 };
 
-export default function PortfolioTable({ holdings, onRemoveHolding, isLoading, onRefresh }: PortfolioTableProps) {
+export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMarketData, onRefresh }: PortfolioTableProps) {
 
-  const renderSkeletonRows = (count: number) => {
+  const renderSkeletonCellsForHolding = (holdingId: string) => (
+    <>
+      <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell> {/* Current Price */}
+      <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell> {/* Total Cost - should be calculated */}
+      <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell> {/* Current Value */}
+      <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell> {/* P/L Amount */}
+      <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell> {/* P/L Percent */}
+    </>
+  );
+  
+  const renderValueCellsForHolding = (holding: EnrichedPortfolioHolding) => {
+    const plColor = holding.profitLoss == null ? "text-foreground" 
+                   : holding.profitLoss > 0 ? "text-accent" 
+                   : holding.profitLoss < 0 ? "text-destructive" 
+                   : "text-foreground";
+    return (
+      <>
+        <TableCell className="text-right">${formatPrice(holding.currentPrice)}</TableCell>
+        <TableCell className="text-right">${formatPrice(holding.totalCost)}</TableCell>
+        <TableCell className="text-right">${formatPrice(holding.currentValue)}</TableCell>
+        <TableCell className={cn("text-right font-medium", plColor)}>
+          {(holding.profitLoss != null && holding.profitLoss > 0 ? "+" : "") + `$${formatPrice(holding.profitLoss)}`}
+        </TableCell>
+        <TableCell className={cn("text-right font-medium", plColor)}>
+          {(holding.profitLossPercentage != null && holding.profitLossPercentage > 0 ? "+" : "") + `${formatPercentage(holding.profitLossPercentage)}`}
+        </TableCell>
+      </>
+    );
+  };
+
+
+  const renderSkeletonRowsForInitialLoad = (count: number) => {
     return Array.from({ length: count }).map((_, index) => (
-      <TableRow key={`skeleton-${index}`}>
+      <TableRow key={`skeleton-initial-${index}`}>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-12" /></TableCell>
         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+        {renderSkeletonCellsForHolding(`skeleton-initial-data-${index}`)}
         <TableCell><Skeleton className="h-8 w-8 rounded" /></TableCell>
       </TableRow>
     ));
@@ -65,8 +93,8 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoading, o
     <div className="mt-6 rounded-lg border shadow-md overflow-hidden bg-card">
        <div className="flex justify-between items-center p-4 border-b">
         <h2 className="text-xl font-semibold">Your Holdings</h2>
-        <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+        <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoadingMarketData && holdings.length > 0}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingMarketData && holdings.length > 0 ? 'animate-spin' : ''}`} />
           Refresh Prices
         </Button>
       </div>
@@ -87,45 +115,25 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoading, o
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && holdings.length === 0 ? (
-              renderSkeletonRows(3)
-            ) : !isLoading && holdings.length === 0 ? (
+            {isLoadingMarketData && holdings.length === 0 ? ( // True initial load skeleton for the whole table
+              renderSkeletonRowsForInitialLoad(3)
+            ) : !isLoadingMarketData && holdings.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                   You have no holdings in your portfolio.
                 </TableCell>
               </TableRow>
             ) : (
-              holdings.map((holding) => {
-                const plColor = holding.profitLoss == null ? "text-foreground" 
-                               : holding.profitLoss > 0 ? "text-accent" 
-                               : holding.profitLoss < 0 ? "text-destructive" 
-                               : "text-foreground";
-                return (
+              holdings.map((holding) => (
                   <TableRow key={holding.id}>
                     <TableCell className="font-medium">{holding.name}</TableCell>
                     <TableCell>{holding.symbol.toUpperCase()}</TableCell>
                     <TableCell className="text-right">{formatPrice(holding.quantity, 2, 8)}</TableCell>
                     <TableCell className="text-right">${formatPrice(holding.purchasePrice)}</TableCell>
-                    <TableCell className="text-right">
-                      {holding.currentPrice === undefined && isLoading ? <Skeleton className="h-5 w-20 ml-auto" /> : `$${formatPrice(holding.currentPrice)}`}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {holding.totalCost === undefined && isLoading ? <Skeleton className="h-5 w-20 ml-auto" /> : `$${formatPrice(holding.totalCost)}`}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {holding.currentValue === undefined && isLoading ? <Skeleton className="h-5 w-24 ml-auto" /> : `$${formatPrice(holding.currentValue)}`}
-                    </TableCell>
-                    <TableCell className={cn("text-right font-medium", plColor)}>
-                       {holding.profitLoss === undefined && isLoading ? <Skeleton className="h-5 w-20 ml-auto" /> : 
-                        (holding.profitLoss != null && holding.profitLoss > 0 ? "+" : "") + `$${formatPrice(holding.profitLoss)}`
-                       }
-                    </TableCell>
-                     <TableCell className={cn("text-right font-medium", plColor)}>
-                       {holding.profitLossPercentage === undefined && isLoading ? <Skeleton className="h-5 w-16 ml-auto" /> : 
-                        (holding.profitLossPercentage != null && holding.profitLossPercentage > 0 ? "+" : "") + `${formatPercentage(holding.profitLossPercentage)}`
-                       }
-                    </TableCell>
+                    {isLoadingMarketData || holding.currentPrice === undefined ? 
+                        renderSkeletonCellsForHolding(holding.id) : 
+                        renderValueCellsForHolding(holding)
+                    }
                     <TableCell className="text-center">
                        <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -150,8 +158,7 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoading, o
                       </AlertDialog>
                     </TableCell>
                   </TableRow>
-                );
-              })
+                ))
             )}
           </TableBody>
         </Table>

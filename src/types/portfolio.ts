@@ -17,3 +17,11 @@ export interface EnrichedPortfolioHolding extends PortfolioHolding {
   profitLoss?: number | null;
   profitLossPercentage?: number | null;
 }
+
+// Used to pass data from analysis page to AddHoldingDialog
+export interface InitialPortfolioHoldingData {
+  coinGeckoId: string;
+  name: string;
+  symbol: string;
+  currentPrice?: number | null;
+}
