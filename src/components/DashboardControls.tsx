@@ -13,12 +13,12 @@ interface DashboardControlsProps {
 
 export default function DashboardControls({ lastUpdated, onRefresh, isRefreshing }: DashboardControlsProps) {
   return (
-    <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-card rounded-lg shadow flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
-      <h2 className="text-lg sm:text-xl font-semibold text-foreground text-center sm:text-left">AI Analysis Dashboard</h2>
-      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
-        <ClientOnly fallback={<span className="text-xs text-muted-foreground self-center sm:self-auto">Loading...</span>}>
+    <div className="mb-4 sm:mb-6 p-3 bg-card rounded-lg shadow flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:items-center sm:p-4">
+      <h2 className="text-lg font-semibold text-foreground text-center sm:text-xl sm:text-left">AI Analysis Dashboard</h2>
+      <div className="flex flex-col items-center gap-2 w-full sm:w-auto sm:flex-row sm:gap-3">
+        <ClientOnly fallback={<span className="text-xs text-muted-foreground">Loading...</span>}>
           {lastUpdated && (
-            <span className="text-xs text-muted-foreground self-center sm:self-auto">
+            <span className="text-xs text-muted-foreground">
               Last Updated: {lastUpdated.toLocaleTimeString()}
             </span>
           )}
@@ -29,10 +29,10 @@ export default function DashboardControls({ lastUpdated, onRefresh, isRefreshing
           onClick={onRefresh}
           disabled={isRefreshing}
           aria-label="Refresh Data"
-          className="h-9 w-full sm:w-auto text-xs sm:text-sm"
+          className="h-9 w-full text-xs sm:w-auto sm:text-sm"
         >
-          <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          <span className="ml-2">{isRefreshing ? "Refreshing..." : "Refresh Analysis"}</span>
+          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : "sm:mr-2"}`} />
+          <span className="ml-2 sm:ml-0">{isRefreshing ? "Refreshing..." : "Refresh Analysis"}</span>
         </Button>
       </div>
     </div>

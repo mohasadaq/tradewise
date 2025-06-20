@@ -63,16 +63,17 @@ export default function FilterSortControls({
   onResetFilters,
 }: FilterSortControlsProps) {
   return (
-    <div className="p-3 sm:p-4 bg-card rounded-lg shadow mb-4 sm:mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 items-end">
-        <div className="md:col-span-2 lg:col-span-1 xl:col-span-1 space-y-1">
+    <div className="p-3 bg-card rounded-lg shadow mb-4 sm:mb-6 sm:p-4">
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:gap-4 xl:grid-cols-5 items-end">
+        
+        <div className="lg:col-span-3 xl:col-span-1 space-y-1">
           <p className="text-sm font-medium text-foreground">Analysis Scope & Filters</p>
           <p className="text-xs text-muted-foreground hidden sm:block">
             Enter symbols (e.g. btc,eth) for specific analysis. Blank analyzes top coins. Stablecoins excluded.
           </p>
         </div>
         
-        <div className="space-y-1">
+        <div className="space-y-1 w-full">
           <Label htmlFor="searchFilter" className="text-xs sm:text-sm">Search Symbols</Label>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -87,7 +88,7 @@ export default function FilterSortControls({
           </div>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1 w-full">
           <Label htmlFor="timeFrameFilter" className="text-xs sm:text-sm">Time Frame</Label>
           <Select
             value={selectedTimeFrame}
@@ -105,7 +106,7 @@ export default function FilterSortControls({
           </Select>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1 w-full">
           <Label htmlFor="confidenceFilter" className="text-xs sm:text-sm">Confidence</Label>
           <Select
             value={confidenceFilter}
@@ -123,7 +124,7 @@ export default function FilterSortControls({
           </Select>
         </div>
         
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:col-span-2 lg:col-span-1 xl:col-span-1">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2 w-full xl:col-span-1"> {/* Stacks on xs, then 2 cols */}
             <div className="space-y-1">
                 <Label htmlFor="sortKey" className="text-xs sm:text-sm">Sort By</Label>
                 <Select
@@ -161,11 +162,10 @@ export default function FilterSortControls({
             </div>
         </div>
       </div>
-      <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+      <div className="mt-4 sm:mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-3">
         <Button variant="outline" onClick={onResetFilters} disabled={isLoading} className="w-full sm:w-auto h-9 text-xs sm:text-sm px-3">
             <ListRestart className="mr-1.5 h-3.5 w-3.5" /> 
-            <span className="hidden sm:inline">Reset & Show Top</span>
-            <span className="sm:hidden">Reset</span>
+            Reset & Show Top
         </Button>
         <Button onClick={onAnalyze} disabled={isLoading} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground h-9 text-xs sm:text-sm px-3">
           <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isLoading ? 'animate-spin': ''}`} />
