@@ -30,6 +30,8 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
   timeFrameAnalysisContext?: string;
   id?: string; // CoinGecko ID
   symbol?: string; // Ticker Symbol
+  demandZone?: string;
+  supplyZone?: string;
 };
 
 interface CryptoDataTableProps {
@@ -319,3 +321,4 @@ export default function CryptoDataTable({ recommendations, sortKey, sortDirectio
     </TooltipProvider>
   );
 }
+

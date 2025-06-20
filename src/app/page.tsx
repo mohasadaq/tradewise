@@ -26,6 +26,8 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
   timeFrameAnalysisContext?: string; 
   id?: string; 
   symbol?: string; 
+  demandZone?: string;
+  supplyZone?: string;
 };
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
@@ -142,6 +144,8 @@ export default function TradeWisePage() {
             tradingStrategy: rec.tradingStrategy || "N/A",
             riskManagementNotes: rec.riskManagementNotes || "N/A",
             timeFrameAnalysisContext: rec.timeFrameAnalysisContext || "N/A",
+            demandZone: rec.demandZone,
+            supplyZone: rec.supplyZone,
           };
         });
         setRecommendations(updatedRecommendations);
@@ -350,3 +354,4 @@ export default function TradeWisePage() {
     </div>
   );
 }
+
