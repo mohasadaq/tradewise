@@ -2,8 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { PlusCircle, AlertTriangle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AddHoldingDialog from '@/components/portfolio/AddHoldingDialog';
 import PortfolioTable from '@/components/portfolio/PortfolioTable';
@@ -91,7 +90,7 @@ export default function PortfolioPage() {
   }, [loadHoldingsFromStorage]);
 
   useEffect(() => {
-    if (coinListForDialog.length === 0) {
+    if (coinListForDialog.length === 0 && !isDialogCoinListLoading) {
       setIsDialogCoinListLoading(true);
       fetchCoinList()
         .then(list => setCoinListForDialog(list))
@@ -102,7 +101,7 @@ export default function PortfolioPage() {
         })
         .finally(() => setIsDialogCoinListLoading(false));
     }
-  }, [coinListForDialog.length, toast]);
+  }, [coinListForDialog.length, toast, isDialogCoinListLoading]);
 
   useEffect(() => {
     if (holdings.length > 0) {
@@ -117,7 +116,6 @@ export default function PortfolioPage() {
   const handleHoldingAdded = () => {
     loadHoldingsFromStorage(); 
     setIsAddDialogOpen(false);
-    // Success toast removed as per guidelines. The portfolio will update visually.
   };
 
   const handleRemoveHolding = (holdingId: string) => {
@@ -153,70 +151,76 @@ export default function PortfolioPage() {
 
   if (isPageStructureLoading && !pageError) { 
     return (
-      <div className="flex justify-center items-center min-h-[calc(100vh_-_var(--header-height,60px)_-_var(--footer-height,50px))]">
+      <div className="flex justify-center items-center min-h-[calc(100vh_-_var(--header-height)_-_var(--footer-height))]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-8 py-4 sm:py-8">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-foreground">My Portfolio</h1>
-        <AddHoldingDialog
-          isOpen={isAddDialogOpen}
-          setIsOpen={setIsAddDialogOpen}
-          onHoldingAdded={handleHoldingAdded}
-          coinList={coinListForDialog} 
+    <div className="flex flex-col min-h-[calc(100vh_-_var(--header-height)_-_var(--footer-height))]">
+      <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Portfolio</h1>
+          {/* AddHoldingDialog is now triggered by individual coin actions from dashboard, or contextually if needed elsewhere. 
+              This button is removed as per user request to avoid confusion with the per-coin add buttons. 
+              If a general "Add Holding" button is needed on this page later, it can be re-added here.
+          <AddHoldingDialog
+            isOpen={isAddDialogOpen}
+            setIsOpen={setIsAddDialogOpen}
+            onHoldingAdded={handleHoldingAdded}
+            coinList={coinListForDialog} 
+          /> 
+          */}
+        </div>
+
+        {pageError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Page Error</AlertTitle>
+            <AlertDescription>{pageError}</AlertDescription>
+          </Alert>
+        )}
+        
+        {marketDataError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Market Data Error</AlertTitle>
+            <AlertDescription>{marketDataError}</AlertDescription>
+          </Alert>
+        )}
+        
+        {(holdings.length > 0 || isMarketDataLoading) && (
+          <PortfolioSummaryCard 
+            totalValue={totalPortfolioValue}
+            totalCost={totalPortfolioCost}
+            totalProfitLoss={totalProfitLoss}
+            totalProfitLossPercentage={totalProfitLossPercentage}
+            isLoading={isMarketDataLoading && holdings.length > 0} 
+          />
+        )}
+
+        <PortfolioTable
+          holdings={enrichedHoldings} 
+          onRemoveHolding={handleRemoveHolding}
+          isLoadingMarketData={isMarketDataLoading && holdings.length > 0} 
+          onRefresh={() => holdings.length > 0 ? fetchMarketDataForHoldings(holdings) : {}}
         />
-      </div>
 
-      {pageError && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Page Error</AlertTitle>
-          <AlertDescription>{pageError}</AlertDescription>
-        </Alert>
-      )}
-      
-      {marketDataError && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Market Data Error</AlertTitle>
-          <AlertDescription>{marketDataError}</AlertDescription>
-        </Alert>
-      )}
-      
-      {(holdings.length > 0 || isMarketDataLoading) && (
-        <PortfolioSummaryCard 
-          totalValue={totalPortfolioValue}
-          totalCost={totalPortfolioCost}
-          totalProfitLoss={totalProfitLoss}
-          totalProfitLossPercentage={totalProfitLossPercentage}
-          isLoading={isMarketDataLoading && holdings.length > 0} 
-        />
-      )}
-
-      <PortfolioTable
-        holdings={enrichedHoldings} 
-        onRemoveHolding={handleRemoveHolding}
-        isLoadingMarketData={isMarketDataLoading && holdings.length > 0} 
-        onRefresh={() => holdings.length > 0 ? fetchMarketDataForHoldings(holdings) : {}}
-      />
-
-      {holdings.length === 0 && !isMarketDataLoading && !isDialogCoinListLoading && (
-         <Card className="mt-6">
-            <CardHeader>
-                <CardTitle className="text-center">Your Portfolio is Empty</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center text-muted-foreground">
-                <p>Add holdings from the Dashboard page by clicking the '+' icon next to an analyzed coin.</p>
-            </CardContent>
-        </Card>
-      )}
-      <footer className="py-4 mt-8 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/50">
+        {holdings.length === 0 && !isMarketDataLoading && !isDialogCoinListLoading && (
+           <Card className="mt-6">
+              <CardHeader>
+                  <CardTitle className="text-center">Your Portfolio is Empty</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center text-muted-foreground">
+                  <p>Add holdings from the Dashboard page by clicking the '+' icon next to an analyzed coin.</p>
+              </CardContent>
+          </Card>
+        )}
+      </main>
+      <footer className="py-3 mt-auto text-center text-xs sm:text-sm text-muted-foreground border-t border-border/50">
         Portfolio data is stored locally in your browser.
       </footer>
-    </main>
+    </div>
   );
 }

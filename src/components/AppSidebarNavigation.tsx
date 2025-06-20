@@ -11,12 +11,12 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarContent,
-  useSidebar, // Import useSidebar
+  useSidebar, 
 } from "@/components/ui/sidebar";
 
 export default function AppSidebarNavigation() {
   const pathname = usePathname();
-  const { setOpen, isMobile } = useSidebar(); // Get setOpen and isMobile from context
+  const { setOpen, isMobile, open: sidebarOpen } = useSidebar(); 
 
   const menuItems = [
     {
@@ -32,21 +32,28 @@ export default function AppSidebarNavigation() {
   ];
 
   const handleLinkClick = () => {
-    if (!isMobile) {
-      setOpen(false); // Collapse sidebar on desktop after navigation
+    if (isMobile) {
+      setOpen(false); // Close sheet on mobile
+    } else {
+      // Only collapse if it's expanded. If it's already collapsed (icon only), do nothing.
+      // This behavior is now default: sidebar auto-collapses if it was expanded.
+      // If user clicks while it's collapsed, it navigates but stays collapsed.
+      // If it was manually expanded by user, then clicking collapses it.
+      if (sidebarOpen) {
+        setOpen(false);
+      }
     }
-    // On mobile, the Sheet component handles its own closing
   };
 
   return (
     <>
-      <SidebarHeader className="p-4">
+      <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-2">
-          <Bot className="h-8 w-8 text-primary" />
-          <h2 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden">TradeWise</h2>
+          <Bot className="h-7 w-7 sm:h-8 sm:w-8 text-primary shrink-0" />
+          <h2 className="text-lg sm:text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden whitespace-nowrap">TradeWise</h2>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="py-2">
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
@@ -54,8 +61,9 @@ export default function AppSidebarNavigation() {
                 asChild
                 isActive={pathname === item.href}
                 tooltip={{ children: item.label, side: "right", align: "center" }}
+                onClick={handleLinkClick} 
               >
-                <Link href={item.href} onClick={handleLinkClick}>
+                <Link href={item.href}>
                   <item.icon />
                   <span>{item.label}</span>
                 </Link>
@@ -64,7 +72,7 @@ export default function AppSidebarNavigation() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="p-2 group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="p-2 mt-auto border-t border-sidebar-border group-data-[collapsible=icon]:hidden">
         <p className="text-xs text-muted-foreground text-center">
           &copy; {new Date().getFullYear()} TradeWise
         </p>

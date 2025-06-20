@@ -23,16 +23,20 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased">
-        <SidebarProvider defaultOpen={true}>
-          <Sidebar side="left" variant="sidebar" collapsible="icon">
-            <AppSidebarNavigation />
-            <SidebarRail />
-          </Sidebar>
-          <SidebarInset>
-            <TradewiseHeader />
-            {children}
-          </SidebarInset>
+      <body className="font-body antialiased bg-background text-foreground">
+        <SidebarProvider defaultOpen={false}> {/* Sidebar collapsed by default on desktop */}
+          <div className="flex min-h-screen">
+            <Sidebar side="left" variant="sidebar" collapsible="icon">
+              <AppSidebarNavigation />
+              <SidebarRail />
+            </Sidebar>
+            <SidebarInset className="flex flex-col flex-grow">
+              <TradewiseHeader />
+              <div className="flex-grow overflow-y-auto"> {/* Main content scrollable area */}
+                {children}
+              </div>
+            </SidebarInset>
+          </div>
         </SidebarProvider>
         <Toaster />
       </body>

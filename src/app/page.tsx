@@ -24,12 +24,12 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
   tradingStrategy?: string; 
   riskManagementNotes?: string;
   timeFrameAnalysisContext?: string; 
-  id?: string; // For mapping to AICoinAnalysisInputData
-  symbol?: string; // For mapping
+  id?: string; 
+  symbol?: string; 
 };
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
-const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const REFRESH_INTERVAL = 30 * 60 * 1000; 
 const DEFAULT_TIME_FRAME: AppTimeFrame = "24h";
 
 const STABLECOIN_SYMBOLS: string[] = [
@@ -59,7 +59,7 @@ export default function TradeWisePage() {
   const [isCoinListLoading, setIsCoinListLoading] = useState(false);
 
   useEffect(() => {
-    if (coinList.length === 0) {
+    if (coinList.length === 0 && !isCoinListLoading) {
       setIsCoinListLoading(true);
       fetchCoinList()
         .then(setCoinList)
@@ -69,7 +69,7 @@ export default function TradeWisePage() {
         })
         .finally(() => setIsCoinListLoading(false));
     }
-  }, [coinList.length, toast]);
+  }, [coinList.length, toast, isCoinListLoading]);
 
 
   const performAnalysis = useCallback(async (symbolsToFetch?: string, timeFrameToUse?: TimeFrame, isAutoRefresh: boolean = false) => {
@@ -208,8 +208,6 @@ export default function TradeWisePage() {
 
   const handleHoldingAdded = () => {
     setIsAddHoldingDialogOpen(false);
-    // No success toast here as per guidelines for non-error toasts.
-    // User will see the holding added in their portfolio.
   };
 
   const filteredAndSortedRecommendations = useMemo(() => {
@@ -295,8 +293,8 @@ export default function TradeWisePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh_-_var(--header-height,60px))]"> {/* Adjust min-height based on header */}
-      <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-8 py-4 sm:py-8">
+    <div className="flex flex-col min-h-[calc(100vh_-_var(--header-height)_-_var(--footer-height))]">
+      <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
         <DashboardControls
            lastUpdated={lastUpdated}
            onRefresh={() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame)}
@@ -339,7 +337,7 @@ export default function TradeWisePage() {
           />
         )}
       </main>
-      <footer className="py-4 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/50">
+      <footer className="py-3 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/50">
         TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Stablecoins are excluded. Data from <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">CoinGecko</a>.
       </footer>
       <AddHoldingDialog
