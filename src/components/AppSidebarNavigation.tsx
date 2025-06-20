@@ -16,7 +16,7 @@ import {
 
 export default function AppSidebarNavigation() {
   const pathname = usePathname();
-  const { setOpen, isMobile, open: sidebarOpen } = useSidebar(); 
+  const { setOpen, isMobile, open: sidebarOpen, setOpenMobile } = useSidebar(); 
 
   const menuItems = [
     {
@@ -33,7 +33,7 @@ export default function AppSidebarNavigation() {
 
   const handleLinkClick = () => {
     if (isMobile) {
-      setOpen(false); // Close sheet on mobile
+      setOpenMobile(false); // Close sheet on mobile
     } else {
       // Only collapse if it's expanded. If it's already collapsed (icon only), do nothing.
       // This behavior is now default: sidebar auto-collapses if it was expanded.
