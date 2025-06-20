@@ -73,7 +73,7 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
 
   const renderSkeletonRowsForInitialLoad = (count: number) => {
     return Array.from({ length: count }).map((_, index) => {
-      const staticSkeletonCells = [
+      const staticSkeletonCells: React.ReactNode[] = [
         <TableCell key={`skel-initial-${index}-name`}><Skeleton className="h-5 w-24" /></TableCell>,
         <TableCell key={`skel-initial-${index}-symbol`}><Skeleton className="h-5 w-12" /></TableCell>,
         <TableCell key={`skel-initial-${index}-qty`} className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>,
@@ -85,7 +85,7 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
       return (
         <TableRow key={`skeleton-initial-${index}`}>
           {staticSkeletonCells}
-          {dynamicSkeletonCells}
+          {...dynamicSkeletonCells}
           {actionSkeletonCell}
         </TableRow>
       );
@@ -169,4 +169,3 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
     </div>
   );
 }
-
