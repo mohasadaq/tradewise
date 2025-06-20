@@ -10,15 +10,17 @@ import BacktestResultsDisplay from './BacktestResultsDisplay';
 import type { BacktestResult, BacktestConfiguration } from '@/types/backtesting';
 import type { CoinListItem } from '@/services/crypto-data-service';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { TimeFrame } from '../FilterSortControls';
+
 
 interface BacktestingModalProps {
   isOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
-  coin: { id: string; name: string; symbol: string };
-  coinList: CoinListItem[]; // For the form, though selection will be disabled
+  coin: { id: string; name: string; symbol: string; analysisTimeFrame?: TimeFrame }; // Added analysisTimeFrame
+  coinList: CoinListItem[]; 
   onRunBacktest: (config: BacktestConfiguration) => Promise<void>;
   results: BacktestResult | null;
-  isLoading: boolean; // Is the backtest currently running?
+  isLoading: boolean; 
   error: string | null;
 }
 
@@ -34,17 +36,15 @@ export default function BacktestingModal({
 }: BacktestingModalProps) {
 
   const handleConfigSubmit = (data: BacktestConfigFormData) => {
-    // The coinGeckoId from form data should match coin.id
     const config: BacktestConfiguration = {
         ...data,
-        coinGeckoId: coin.id, // Ensure the correct coin ID is used
+        coinGeckoId: coin.id, 
     };
     onRunBacktest(config);
   };
 
   const handleClose = () => {
     setIsOpen(false);
-    // Parent component (TradeWisePage) will handle resetting results/errors when isOpen becomes false
   };
 
   return (
@@ -58,13 +58,12 @@ export default function BacktestingModal({
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto py-4 pr-2 space-y-6">
-          {!results && !isLoading && ( // Show form if no results and not loading new results
+          {!results && !isLoading && ( 
             <BacktestConfigurationForm
                 coinList={coinList}
                 onSubmit={handleConfigSubmit}
                 isLoading={isLoading}
-                initialCoin={coin}
-                // defaultValues could be passed if we want to retain form state across modal closes for the same coin
+                initialCoin={coin} // Pass the whole coin object including analysisTimeFrame
             />
           )}
 
@@ -79,7 +78,7 @@ export default function BacktestingModal({
           {error && !isLoading && (
             <Alert variant="destructive" className="my-4">
               <AlertTriangle className="h-4 w-4" />
-              <DialogTitle>Backtest Error</DialogTitle> {/* Using DialogTitle for styling consistency inside modal */}
+              <DialogTitle>Backtest Error</DialogTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -90,10 +89,11 @@ export default function BacktestingModal({
         </div>
 
         <DialogFooter className="mt-auto pt-4 border-t">
-            {results && ( // Show a "Run New" button if results are displayed
-                 <Button variant="outline" onClick={() => { /* Logic to reset view to form */
-                    // This will be handled by parent resetting results when modal closes and reopens, or specific state here
-                    // For now, rely on parent re-render: parent should clear results when this modal re-opens for new config
+            {results && ( 
+                 <Button variant="outline" onClick={() => { 
+                    // To re-run, we effectively need to clear results and show form again.
+                    // The parent component will clear currentBacktestResults when the modal is closed and re-opened.
+                    // For now, a simple "Close" will allow re-opening with a fresh form.
                  }} disabled>
                     Re-configure (Close & Re-open)
                  </Button>

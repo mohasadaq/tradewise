@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { analyzeCryptoTrades, type AnalyzeCryptoTradesOutput, type AICoinAnalysisInputData } from "@/ai/flows/analyze-crypto-trades";
-import { fetchCoinData, type CryptoCoinData, type AppTimeFrame, fetchCoinList, type CoinListItem, fetchHistoricalCoinData, type HistoricalPricePoint } from "@/services/crypto-data-service";
+import { fetchCoinData, type CryptoCoinData, type AppTimeFrame, fetchCoinList, type CoinListItem, fetchHistoricalCoinData, type HistoricalPricePoint, type TimeFrame as ApiTimeFrame } from "@/services/crypto-data-service";
 import CryptoDataTable from "@/components/CryptoDataTable";
 import FilterSortControls, {
   type ConfidenceFilter,
@@ -31,12 +31,14 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
   symbol?: string; 
   demandZone?: string;
   supplyZone?: string;
+  analysisTimeFrame?: TimeFrame; // Added to carry the analysis context
 };
 
 type CoinForBacktest = {
   id: string;
   name: string;
   symbol: string;
+  analysisTimeFrame?: TimeFrame; // Added for context
 };
 
 const NUMBER_OF_COINS_TO_FETCH_DEFAULT = 5;
@@ -164,6 +166,7 @@ export default function TradeWisePage() {
             timeFrameAnalysisContext: rec.timeFrameAnalysisContext || "N/A",
             demandZone: rec.demandZone,
             supplyZone: rec.supplyZone,
+            analysisTimeFrame: currentTimeFrame, // Store the timeframe used for this analysis
           };
         });
         setRecommendations(updatedRecommendations);
@@ -242,7 +245,8 @@ export default function TradeWisePage() {
     setSelectedCoinForBacktest({
         id: coin.id,
         name: coin.coinName,
-        symbol: coin.symbol.toUpperCase() 
+        symbol: coin.symbol.toUpperCase(),
+        analysisTimeFrame: coin.analysisTimeFrame, // Pass the analysis timeframe
     });
     setCurrentBacktestResults(null); 
     setBacktestRunError(null); 
@@ -265,7 +269,6 @@ export default function TradeWisePage() {
       );
 
       if (historicalData.length === 0) {
-        // This specific error is now handled by setting backtestRunError and showing it in the modal
         const noDataMsg = "No historical data found for the selected coin and date range. Please adjust the dates.";
         setBacktestRunError(noDataMsg);
         toast({ title: "Backtest Failed", description: noDataMsg, variant: "destructive" });
@@ -276,27 +279,25 @@ export default function TradeWisePage() {
       toast({ title: "Running Backtest...", description: `Simulating MA Crossover strategy for ${selectedCoinForBacktest.name}.`});
       const results = runMACrossoverBacktest(config, historicalData);
       
-      setCurrentBacktestResults(results); // Always set results to display, even if it contains a statusMessage
+      setCurrentBacktestResults(results);
 
       if (results.statusMessage) {
-        // Informational message from backtesting service (e.g. not enough data for MA, no trades)
-        setBacktestRunError(null); // Not a generic error, the message is in results
+        setBacktestRunError(null); 
         toast({
           title: "Backtest Information",
           description: results.statusMessage,
-          variant: "default", // Use default variant for informational messages
+          variant: "default", 
         });
       } else {
-        // Successful backtest with trades
         setBacktestRunError(null);
         toast({ title: "Backtest Complete!", description: `Results for ${selectedCoinForBacktest.name} are now displayed.`});
       }
 
-    } catch (err) { // Catches other errors, e.g., from fetchHistoricalCoinData or unexpected issues
+    } catch (err) { 
       console.error("Error during backtest run:", err);
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during the backtest.";
       setBacktestRunError(errorMessage);
-      setCurrentBacktestResults(null); // Ensure no stale results are shown on hard error
+      setCurrentBacktestResults(null); 
       toast({
         title: "Backtest Failed",
         description: errorMessage,
@@ -316,8 +317,8 @@ export default function TradeWisePage() {
         if (lowerCaseQuerySymbols.length > 0) {
             filtered = filtered.filter(rec =>
                 lowerCaseQuerySymbols.some(querySymbol =>
-                    rec.coin.toLowerCase().includes(querySymbol) || 
-                    rec.coinName.toLowerCase().includes(querySymbol)
+                    (rec.coin?.toLowerCase() || "").includes(querySymbol) || 
+                    (rec.coinName?.toLowerCase() || "").includes(querySymbol)
                 )
             );
         }
@@ -362,8 +363,8 @@ export default function TradeWisePage() {
           valB = signalOrder[b.signal?.toLowerCase()] ?? 3;
           break;
         case "confidenceLevel":
-          valA = confidenceOrder[a.confidenceLevel.toLowerCase()] ?? 3;
-          valB = confidenceOrder[b.confidenceLevel.toLowerCase()] ?? 3;
+          valA = confidenceOrder[a.confidenceLevel?.toLowerCase()] ?? 3;
+          valB = confidenceOrder[b.confidenceLevel?.toLowerCase()] ?? 3;
           break;
         default:
           return 0;

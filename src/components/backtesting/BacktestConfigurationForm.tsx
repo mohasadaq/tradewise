@@ -15,9 +15,10 @@ import { format, subDays } from 'date-fns';
 import type { CoinListItem } from '@/services/crypto-data-service';
 import type { BacktestConfiguration } from '@/types/backtesting';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { TimeFrame } from '../FilterSortControls';
 
 const backtestConfigSchema = z.object({
-  coinGeckoId: z.string().min(1, "Coin ID is required for backtesting."), // This will be pre-filled
+  coinGeckoId: z.string().min(1, "Coin ID is required for backtesting."),
   startDate: z.date({ required_error: "Start date is required." }),
   endDate: z.date({ required_error: "End date is required." }),
   initialCapital: z.number().positive("Initial capital must be positive.").min(1, "Initial capital must be at least 1."),
@@ -34,13 +35,34 @@ const backtestConfigSchema = z.object({
 export type BacktestConfigFormData = z.infer<typeof backtestConfigSchema>;
 
 interface BacktestConfigurationFormProps {
-  // coinList is kept for potential future generic use, but selection is disabled when initialCoin is provided
   coinList: CoinListItem[]; 
   onSubmit: (data: BacktestConfiguration) => void;
   isLoading: boolean;
-  defaultValues?: Partial<BacktestConfigFormData>; // For re-populating if modal reopens with same coin
-  initialCoin: { id: string; name: string; symbol: string }; // The coin this form is for
+  defaultValues?: Partial<BacktestConfigFormData>;
+  initialCoin: { id: string; name: string; symbol: string; analysisTimeFrame?: TimeFrame }; // analysisTimeFrame added
 }
+
+// Heuristic to get default MA periods based on analysis time frame
+const getDefaultMAPeriods = (analysisTimeFrame?: TimeFrame): { short: number; long: number } => {
+  switch (analysisTimeFrame) {
+    case '15m':
+    case '30m':
+      return { short: 7, long: 14 };
+    case '1h':
+      return { short: 10, long: 20 };
+    case '4h':
+      return { short: 12, long: 26 };
+    case '12h':
+    case '24h':
+      return { short: 20, long: 50 };
+    case '7d':
+    case '30d':
+      return { short: 50, long: 200 };
+    default: // Default if no analysisTimeFrame or unknown
+      return { short: 10, long: 30 };
+  }
+};
+
 
 export default function BacktestConfigurationForm({
   coinList,
@@ -49,32 +71,37 @@ export default function BacktestConfigurationForm({
   defaultValues,
   initialCoin
 }: BacktestConfigurationFormProps) {
+  const initialMAPeriods = getDefaultMAPeriods(initialCoin.analysisTimeFrame);
+
   const { control, handleSubmit, reset, watch, formState: { errors } } = useForm<BacktestConfigFormData>({
     resolver: zodResolver(backtestConfigSchema),
     defaultValues: {
-      ...defaultValues, // Apply any re-population values first
-      coinGeckoId: initialCoin.id, // Override with the specific coin for this instance
+      ...defaultValues,
+      coinGeckoId: initialCoin.id,
       startDate: defaultValues?.startDate || subDays(new Date(), 90),
       endDate: defaultValues?.endDate || subDays(new Date(), 1),
       initialCapital: defaultValues?.initialCapital || 10000,
-      shortMAPeriod: defaultValues?.shortMAPeriod || 10,
-      longMAPeriod: defaultValues?.longMAPeriod || 30,
+      shortMAPeriod: defaultValues?.shortMAPeriod || initialMAPeriods.short,
+      longMAPeriod: defaultValues?.longMAPeriod || initialMAPeriods.long,
     }
   });
 
   useEffect(() => {
-    // Ensure coinGeckoId is always set to the initialCoin.id when the component mounts or initialCoin changes
+    const newDefaultMAPeriods = getDefaultMAPeriods(initialCoin.analysisTimeFrame);
     reset({
-      ...watch(), // preserve other form values
+      ...watch(), 
       coinGeckoId: initialCoin.id,
-      // Re-apply defaults if not provided in defaultValues from parent
-      startDate: defaultValues?.startDate || watch('startDate') || subDays(new Date(), 90),
-      endDate: defaultValues?.endDate || watch('endDate') || subDays(new Date(), 1),
-      initialCapital: defaultValues?.initialCapital || watch('initialCapital') || 10000,
-      shortMAPeriod: defaultValues?.shortMAPeriod || watch('shortMAPeriod') || 10,
-      longMAPeriod: defaultValues?.longMAPeriod || watch('longMAPeriod') || 30,
+      startDate: watch('startDate') || subDays(new Date(), 90), // Preserve user changes if any
+      endDate: watch('endDate') || subDays(new Date(), 1),
+      initialCapital: watch('initialCapital') || 10000,
+      // Only update MAs if they haven't been touched by the user from the initial heuristic defaults
+      // This check is a bit tricky with react-hook-form's defaultValues. A simpler approach for now:
+      // always reset to heuristic if initialCoin.analysisTimeFrame changes, or user explicitly resets.
+      // For more sophisticated "only if not touched", one might track if field is dirty.
+      shortMAPeriod: newDefaultMAPeriods.short,
+      longMAPeriod: newDefaultMAPeriods.long,
     });
-  }, [initialCoin, reset, watch, defaultValues]);
+  }, [initialCoin.id, initialCoin.analysisTimeFrame, reset, watch]);
 
 
   const processSubmit: SubmitHandler<BacktestConfigFormData> = (data) => {
@@ -82,13 +109,14 @@ export default function BacktestConfigurationForm({
   };
   
   const handleResetForm = () => {
+    const freshDefaultMAPeriods = getDefaultMAPeriods(initialCoin.analysisTimeFrame);
     reset({
-      coinGeckoId: initialCoin.id, // Keep the selected coin
+      coinGeckoId: initialCoin.id, 
       startDate: subDays(new Date(), 90),
       endDate: subDays(new Date(), 1),
       initialCapital: 10000,
-      shortMAPeriod: 10,
-      longMAPeriod: 30,
+      shortMAPeriod: freshDefaultMAPeriods.short,
+      longMAPeriod: freshDefaultMAPeriods.long,
     });
   };
 
@@ -99,14 +127,13 @@ export default function BacktestConfigurationForm({
         <AlertTitle className="font-semibold">Backtesting: {initialCoin.name} ({initialCoin.symbol})</AlertTitle>
         <AlertDescription className="text-xs">
           Configure parameters to simulate the MA Crossover strategy for this coin.
+          {initialCoin.analysisTimeFrame && ` Default MA periods suggested based on ${initialCoin.analysisTimeFrame} analysis view.`}
         </AlertDescription>
       </Alert>
       
-      {/* Hidden input for coinGeckoId as it's fixed */}
       <Controller name="coinGeckoId" control={control} render={({ field }) => <input type="hidden" {...field} />} />
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-        {/* Initial Capital */}
         <div className="space-y-1">
           <Label htmlFor="initialCapital" className="flex items-center text-sm font-medium">
             <DollarSign className="h-3.5 w-3.5 mr-1.5 text-primary" />
@@ -129,7 +156,6 @@ export default function BacktestConfigurationForm({
           {errors.initialCapital && <p className="text-xs text-destructive mt-1">{errors.initialCapital.message}</p>}
         </div>
 
-        {/* Date Range (using two popovers) */}
         <div className="space-y-1">
           <Label className="flex items-center text-sm font-medium mb-1">
             <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-primary" />
@@ -192,7 +218,6 @@ export default function BacktestConfigurationForm({
         </div>
       </div>
       
-      {/* MA Strategy Parameters */}
       <div className="space-y-3 pt-3 border-t border-border/30">
         <h3 className="text-sm font-semibold flex items-center">
           <Settings className="h-4 w-4 mr-1.5 text-primary" />
