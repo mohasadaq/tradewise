@@ -7,7 +7,6 @@
 import { z } from 'zod';
 
 // Time frames we offer in the UI and pass to AI. These are the values used in FilterSortControls.
-// This constant is now internal to this module. The AppTimeFrame type is exported.
 const APP_SUPPORTED_TIME_FRAMES = ["15m", "30m", "1h", "4h", "12h", "24h", "7d", "30d"] as const;
 export type AppTimeFrame = typeof APP_SUPPORTED_TIME_FRAMES[number];
 
@@ -41,7 +40,7 @@ const CoinListItemSchema = z.object({
   symbol: z.string(),
   name: z.string(),
 });
-type CoinListItem = z.infer<typeof CoinListItemSchema>;
+export type CoinListItem = z.infer<typeof CoinListItemSchema>;
 
 // Schema for individual coin data from CoinGecko's /coins/markets endpoint
 const CoinGeckoMarketCoinSchema = z.object({
@@ -72,7 +71,7 @@ const CoinGeckoMarketCoinSchema = z.object({
     times: z.number(),
     currency: z.string(),
     percentage: z.number(),
-  }).nullable(),
+  }).nullable().optional(),
   last_updated: z.string().datetime({ offset: true }).nullable(),
 }).catchall(z.any()); // Allows other properties like price_change_percentage_Xh_in_currency
 
@@ -91,7 +90,7 @@ export type CryptoCoinData = z.infer<typeof ProcessedCoinDataSchema>;
 
 const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3';
 
-async function fetchCoinList(): Promise<CoinListItem[]> {
+export async function fetchCoinList(): Promise<CoinListItem[]> {
   const url = `${COINGECKO_API_BASE_URL}/coins/list?include_platform=false`;
   try {
     const response = await fetch(url, {
@@ -139,11 +138,16 @@ export async function fetchCoinData(
     const symbolArray = symbols.toLowerCase().split(',').map(s => s.trim()).filter(s => s);
     const ids: string[] = [];
     for (const sym of symbolArray) {
-      const foundCoin = coinList.find(coin => coin.symbol.toLowerCase() === sym);
+      // Try matching symbol first, then ID (slug) if symbol fails.
+      let foundCoin = coinList.find(coin => coin.symbol.toLowerCase() === sym);
+      if (!foundCoin) {
+        foundCoin = coinList.find(coin => coin.id.toLowerCase() === sym);
+      }
+      
       if (foundCoin) {
         ids.push(foundCoin.id);
       } else {
-        console.warn(`Symbol '${sym}' not found in CoinGecko's list. Skipping.`);
+        console.warn(`Symbol or ID '${sym}' not found in CoinGecko's list. Skipping.`);
       }
     }
     if (ids.length === 0) {

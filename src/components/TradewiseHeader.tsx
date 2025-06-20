@@ -1,9 +1,10 @@
 
 "use client";
 
-import { RefreshCw, Bot } from "lucide-react";
+import { RefreshCw, Bot, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ClientOnly from "@/components/ClientOnly";
+import Link from "next/link";
 
 interface TradewiseHeaderProps {
   lastUpdated: Date | null;
@@ -27,6 +28,11 @@ export default function TradewiseHeader({ lastUpdated, onRefresh, isRefreshing }
               </span>
             )}
           </ClientOnly>
+          <Link href="/portfolio" passHref>
+            <Button variant="outline" size="icon" aria-label="Portfolio" className="h-8 w-8 sm:h-9 sm:w-9">
+              <Briefcase className="h-4 w-4" />
+            </Button>
+          </Link>
           <Button
             variant="outline"
             size="icon"
