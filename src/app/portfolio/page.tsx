@@ -169,17 +169,12 @@ export default function PortfolioPage() {
     <div className="container mx-auto px-2 sm:px-4 md:px-8 py-4 sm:py-8">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-foreground">My Portfolio</h1>
+        {/* AddHoldingDialog is still available but not triggered by a button in this section */}
         <AddHoldingDialog
           isOpen={isAddDialogOpen}
           setIsOpen={setIsAddDialogOpen}
           onHoldingAdded={handleHoldingAdded}
           coinList={coinListForDialog}
-          triggerButton={
-            <Button disabled={isDialogCoinListLoading}>
-              {isDialogCoinListLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />} 
-              Add Holding
-            </Button>
-          }
         />
       </div>
 
@@ -222,7 +217,7 @@ export default function PortfolioPage() {
                 <CardTitle className="text-center">Your Portfolio is Empty</CardTitle>
             </CardHeader>
             <CardContent className="text-center text-muted-foreground">
-                <p>Click "Add Holding" to start building your portfolio.</p>
+                <p>You can add holdings from the main analysis page.</p>
             </CardContent>
         </Card>
       )}
