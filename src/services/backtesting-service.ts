@@ -16,14 +16,43 @@ function calculateSMA(data: number[], period: number): (number | undefined)[] {
   return sma;
 }
 
+function calculateBuyAndHoldProfitLossPercentage(initialCapital: number, historicalData: HistoricalPricePoint[]): number | undefined {
+  if (historicalData.length > 0 && initialCapital > 0) {
+    const initialPrice = historicalData[0].price;
+    const finalPrice = historicalData[historicalData.length - 1].price;
+    if (initialPrice === 0) return undefined; // Avoid division by zero
+
+    const coinsBoughtForBuyAndHold = initialCapital / initialPrice;
+    const buyAndHoldFinalValue = coinsBoughtForBuyAndHold * finalPrice;
+    const buyAndHoldProfitLoss = buyAndHoldFinalValue - initialCapital;
+    return (buyAndHoldProfitLoss / initialCapital) * 100;
+  }
+  return undefined;
+}
+
 export function runMACrossoverBacktest(
   config: BacktestConfiguration,
   historicalData: HistoricalPricePoint[]
 ): BacktestResult {
   const { initialCapital, shortMAPeriod, longMAPeriod } = config;
 
+  // Note: Caller (page.tsx) already checks if historicalData is empty.
+  // This function will be called with non-empty historicalData.
+
+  const buyAndHoldPercentage = calculateBuyAndHoldProfitLossPercentage(initialCapital, historicalData);
+
   if (historicalData.length < longMAPeriod) {
-    throw new Error("Not enough historical data for the selected Long MA period. Try using a wider date range or a shorter MA period.");
+    return {
+      config,
+      finalPortfolioValue: initialCapital,
+      totalProfitLoss: 0,
+      profitLossPercentage: 0,
+      totalTrades: 0,
+      tradeLog: [],
+      historicalDataWithMAs: historicalData.map(p => ({ ...p })), // No MAs calculated
+      buyAndHoldProfitLossPercentage: buyAndHoldPercentage,
+      statusMessage: `Not enough historical data (${historicalData.length} points) for the selected Long MA period (${longMAPeriod}). Try using a wider date range or a shorter MA period.`,
+    };
   }
 
   const prices = historicalData.map(p => p.price);
@@ -41,7 +70,7 @@ export function runMACrossoverBacktest(
   const tradeLog: TradeLogEntry[] = [];
   let positionOpen = false;
 
-  for (let i = 1; i < historicalData.length; i++) { // Start from 1 to check previous day's MAs
+  for (let i = 1; i < historicalData.length; i++) {
     const currentPrice = historicalData[i].price;
     const currentDate = historicalData[i].date;
     const prevShortMA = shortMAs[i-1];
@@ -50,10 +79,9 @@ export function runMACrossoverBacktest(
     const currentLongMA = longMAs[i];
 
     if (prevShortMA === undefined || prevLongMA === undefined || currentShortMA === undefined || currentLongMA === undefined) {
-      continue; // Not enough data for MAs yet
+      continue; 
     }
 
-    // Buy signal: Short MA crosses above Long MA
     if (prevShortMA <= prevLongMA && currentShortMA > currentLongMA && !positionOpen) {
       const quantityToBuy = cash / currentPrice;
       coinsHeld = quantityToBuy;
@@ -69,7 +97,6 @@ export function runMACrossoverBacktest(
         reason: `Short MA (${currentShortMA.toFixed(2)}) crossed above Long MA (${currentLongMA.toFixed(2)})`
       });
     }
-    // Sell signal: Short MA crosses below Long MA
     else if (prevShortMA >= prevLongMA && currentShortMA < currentLongMA && positionOpen) {
       cash = coinsHeld * currentPrice;
       const quantitySold = coinsHeld;
@@ -87,7 +114,6 @@ export function runMACrossoverBacktest(
     }
   }
 
-  // If position is still open at the end, close it at the last price
   if (positionOpen && historicalData.length > 0) {
     const lastPrice = historicalData[historicalData.length - 1].price;
     const lastDate = historicalData[historicalData.length - 1].date;
@@ -105,22 +131,9 @@ export function runMACrossoverBacktest(
     });
   }
 
-  const finalPortfolioValue = cash; // Since all coins are sold
+  const finalPortfolioValue = cash;
   const totalProfitLoss = finalPortfolioValue - initialCapital;
   const profitLossPercentage = initialCapital > 0 ? (totalProfitLoss / initialCapital) * 100 : 0;
-
-  // Calculate Buy and Hold for comparison
-  let buyAndHoldFinalValue = initialCapital;
-  let buyAndHoldProfitLossPercentage: number | undefined = undefined;
-  if (historicalData.length > 0 && initialCapital > 0) {
-    const initialPrice = historicalData[0].price;
-    const finalPrice = historicalData[historicalData.length - 1].price;
-    const coinsBoughtForBuyAndHold = initialCapital / initialPrice;
-    buyAndHoldFinalValue = coinsBoughtForBuyAndHold * finalPrice;
-    const buyAndHoldProfitLoss = buyAndHoldFinalValue - initialCapital;
-    buyAndHoldProfitLossPercentage = (buyAndHoldProfitLoss / initialCapital) * 100;
-  }
-
 
   return {
     config,
@@ -130,6 +143,8 @@ export function runMACrossoverBacktest(
     totalTrades: tradeLog.length,
     tradeLog,
     historicalDataWithMAs,
-    buyAndHoldProfitLossPercentage,
+    buyAndHoldProfitLossPercentage: buyAndHoldPercentage,
+    statusMessage: tradeLog.length === 0 && historicalData.length >= longMAPeriod ? "No trades were executed with the given parameters and data." : undefined,
   };
 }
+

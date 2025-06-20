@@ -242,10 +242,10 @@ export default function TradeWisePage() {
     setSelectedCoinForBacktest({
         id: coin.id,
         name: coin.coinName,
-        symbol: coin.symbol.toUpperCase() // Ensure symbol is uppercase for display consistency
+        symbol: coin.symbol.toUpperCase() 
     });
-    setCurrentBacktestResults(null); // Reset previous results
-    setBacktestRunError(null); // Reset previous errors
+    setCurrentBacktestResults(null); 
+    setBacktestRunError(null); 
     setIsBacktestingModalOpen(true);
   };
 
@@ -259,24 +259,44 @@ export default function TradeWisePage() {
     try {
       toast({ title: "Fetching Historical Data...", description: `For ${selectedCoinForBacktest.name}, this may take a moment.`});
       const historicalData: HistoricalPricePoint[] = await fetchHistoricalCoinData(
-        config.coinGeckoId, // This comes from the form, should match selectedCoinForBacktest.id
+        config.coinGeckoId,
         config.startDate,
         config.endDate
       );
 
       if (historicalData.length === 0) {
-        throw new Error("No historical data found for the selected coin and date range.");
+        // This specific error is now handled by setting backtestRunError and showing it in the modal
+        const noDataMsg = "No historical data found for the selected coin and date range. Please adjust the dates.";
+        setBacktestRunError(noDataMsg);
+        toast({ title: "Backtest Failed", description: noDataMsg, variant: "destructive" });
+        setIsBacktestRunInProgress(false);
+        return;
       }
       
       toast({ title: "Running Backtest...", description: `Simulating MA Crossover strategy for ${selectedCoinForBacktest.name}.`});
       const results = runMACrossoverBacktest(config, historicalData);
-      setCurrentBacktestResults(results);
-      toast({ title: "Backtest Complete!", description: `Results for ${selectedCoinForBacktest.name} are now displayed.`});
+      
+      setCurrentBacktestResults(results); // Always set results to display, even if it contains a statusMessage
 
-    } catch (err) {
-      console.error("Error during backtest:", err);
+      if (results.statusMessage) {
+        // Informational message from backtesting service (e.g. not enough data for MA, no trades)
+        setBacktestRunError(null); // Not a generic error, the message is in results
+        toast({
+          title: "Backtest Information",
+          description: results.statusMessage,
+          variant: "default", // Use default variant for informational messages
+        });
+      } else {
+        // Successful backtest with trades
+        setBacktestRunError(null);
+        toast({ title: "Backtest Complete!", description: `Results for ${selectedCoinForBacktest.name} are now displayed.`});
+      }
+
+    } catch (err) { // Catches other errors, e.g., from fetchHistoricalCoinData or unexpected issues
+      console.error("Error during backtest run:", err);
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during the backtest.";
       setBacktestRunError(errorMessage);
+      setCurrentBacktestResults(null); // Ensure no stale results are shown on hard error
       toast({
         title: "Backtest Failed",
         description: errorMessage,
@@ -433,14 +453,14 @@ export default function TradeWisePage() {
             isOpen={isBacktestingModalOpen}
             setIsOpen={(isOpen) => {
                 setIsBacktestingModalOpen(isOpen);
-                if (!isOpen) { // Reset states when modal is closed
+                if (!isOpen) { 
                     setSelectedCoinForBacktest(null);
                     setCurrentBacktestResults(null);
                     setBacktestRunError(null);
                 }
             }}
             coin={selectedCoinForBacktest}
-            coinList={coinList} // Pass full coinList for the form's dropdown (though it will be disabled)
+            coinList={coinList} 
             onRunBacktest={handleRunBacktestInModal}
             results={currentBacktestResults}
             isLoading={isBacktestRunInProgress}
@@ -450,3 +470,4 @@ export default function TradeWisePage() {
     </div>
   );
 }
+

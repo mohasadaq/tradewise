@@ -29,9 +29,11 @@ export interface BacktestResult {
   tradeLog: TradeLogEntry[];
   historicalDataWithMAs?: (HistoricalPricePoint & { shortMA?: number; longMA?: number })[];
   buyAndHoldProfitLossPercentage?: number;
+  statusMessage?: string; // New field for informational messages
 }
 
 export interface MAValues {
   shortMA?: number;
   longMA?: number;
 }
+

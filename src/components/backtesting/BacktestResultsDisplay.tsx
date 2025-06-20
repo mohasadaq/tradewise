@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
-import { TrendingUp, TrendingDown, MinusCircle, DollarSign, Percent, ListChecks, CandlestickChart } from 'lucide-react';
+import { TrendingUp, TrendingDown, MinusCircle, DollarSign, Percent, ListChecks, CandlestickChart, InfoIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle as UIAlertTitle } from "@/components/ui/alert"; // Renamed to avoid conflict
 
 interface BacktestResultsDisplayProps {
   results: BacktestResult;
@@ -46,7 +47,8 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
     profitLossPercentage, 
     totalTrades, 
     tradeLog,
-    buyAndHoldProfitLossPercentage
+    buyAndHoldProfitLossPercentage,
+    statusMessage
   } = results;
 
   const plColor = totalProfitLoss == null ? "text-foreground" 
@@ -69,6 +71,14 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {statusMessage && (
+          <Alert variant="default" className="mb-4">
+            <InfoIcon className="h-4 w-4" />
+            <UIAlertTitle>Information</UIAlertTitle>
+            <AlertDescription>{statusMessage}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Summary Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card className="p-4 bg-card-foreground/5">
@@ -144,10 +154,11 @@ export default function BacktestResultsDisplay({ results, coinSymbol }: Backtest
             </ScrollArea>
           </div>
         )}
-        {tradeLog.length === 0 && (
+        {tradeLog.length === 0 && !statusMessage?.includes("Not enough historical data") && ( // Only show if not already covered by a status message
             <p className="text-muted-foreground text-center py-4">No trades were executed during this backtest period with the given parameters.</p>
         )}
       </CardContent>
     </Card>
   );
 }
+
