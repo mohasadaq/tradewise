@@ -15,7 +15,7 @@ import { format, subDays } from 'date-fns';
 import type { BacktestConfiguration } from '@/types/backtesting';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { TimeFrame } from '../FilterSortControls';
-import type { TradingRecommendation } from '@/app/page'; // Assuming this type is accessible
+import type { TradingRecommendation } from '@/app/page'; 
 
 
 // Schema for AI Recommendation backtest form (MA params removed)
