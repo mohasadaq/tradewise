@@ -5,7 +5,7 @@ import type { EnrichedPortfolioHolding } from "@/types/portfolio";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, TrendingUp, TrendingDown, MinusCircle, RefreshCw } from "lucide-react";
+import { Trash2, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -22,7 +22,7 @@ import {
 interface PortfolioListItemProps {
   holding: EnrichedPortfolioHolding;
   onRemoveHolding: (holdingId: string) => void;
-  isLoadingMarketData: boolean; // True if global market data refresh is happening OR this specific item's price is missing
+  isLoadingMarketData: boolean; 
 }
 
 const formatPrice = (price: number | undefined | null, minimumFractionDigits = 2, maximumFractionDigits = 2, prefix = "$") => {
@@ -65,55 +65,55 @@ export default function PortfolioListItem({ holding, onRemoveHolding, isLoadingM
                        : MinusCircle;
 
   return (
-    <Card className="shadow-md bg-card mb-3 sm:mb-4">
+    <Card className="shadow-md bg-card mb-3">
       <CardHeader className="pb-2 pt-3 px-3 sm:px-4">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-base sm:text-lg font-semibold">{holding.name} ({holding.symbol.toUpperCase()})</CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle className="text-sm sm:text-base font-semibold">{holding.name} ({holding.symbol.toUpperCase()})</CardTitle>
+            <CardDescription className="text-xs pt-0.5">
               Qty: {formatQuantity(holding.quantity)} @ {formatPrice(holding.purchasePrice, 2, 5)}
             </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="px-3 sm:px-4 pb-3 text-sm space-y-2.5">
-        <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-2">
+      <CardContent className="px-3 sm:px-4 pb-2.5 text-xs space-y-2">
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
           <div>
             <p className="text-muted-foreground text-xs">Current Price:</p>
-            {showSkeletons ? <Skeleton className="h-5 w-16 sm:w-20 mt-0.5" /> : <p className="font-medium text-xs sm:text-sm">{formatPrice(holding.currentPrice, 2, 5)}</p>}
+            {showSkeletons ? <Skeleton className="h-4 w-16 mt-0.5" /> : <p className="font-medium text-xs">{formatPrice(holding.currentPrice, 2, 5)}</p>}
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Total Cost:</p>
-            <p className="font-medium text-xs sm:text-sm">{formatPrice(holding.totalCost)}</p>
+            <p className="font-medium text-xs">{formatPrice(holding.totalCost)}</p>
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Current Value:</p>
-            {showSkeletons ? <Skeleton className="h-5 w-20 sm:w-24 mt-0.5" /> : <p className="font-medium text-xs sm:text-sm">{formatPrice(holding.currentValue)}</p>}
+            {showSkeletons ? <Skeleton className="h-4 w-20 mt-0.5" /> : <p className="font-medium text-xs">{formatPrice(holding.currentValue)}</p>}
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Profit/Loss:</p>
-            {showSkeletons ? <Skeleton className="h-5 w-16 sm:w-20 mt-0.5" /> : (
-              <p className={cn("font-medium flex items-center text-xs sm:text-sm", plColor)}>
-                <ProfitLossIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 shrink-0" />
+            {showSkeletons ? <Skeleton className="h-4 w-16 mt-0.5" /> : (
+              <p className={cn("font-medium flex items-center text-xs", plColor)}>
+                <ProfitLossIcon className="h-3 w-3 mr-1 shrink-0" />
                 {(holding.profitLoss != null && holding.profitLoss > 0 ? "+" : "") + formatPrice(holding.profitLoss, 2, 2, holding.profitLoss != null && holding.profitLoss < 0 && holding.profitLoss > -0.005 ? "-$" : "$")}
               </p>
             )}
           </div>
           <div className="col-span-2">
             <p className="text-muted-foreground text-xs">Profit/Loss %:</p>
-            {showSkeletons ? <Skeleton className="h-5 w-12 sm:w-16 mt-0.5" /> : (
-              <p className={cn("font-medium flex items-center text-xs sm:text-sm", plColor)}>
-                <ProfitLossIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 shrink-0" />
+            {showSkeletons ? <Skeleton className="h-4 w-12 mt-0.5" /> : (
+              <p className={cn("font-medium flex items-center text-xs", plColor)}>
+                <ProfitLossIcon className="h-3 w-3 mr-1 shrink-0" />
                 {formatPercentage(holding.profitLossPercentage)}
               </p>
             )}
           </div>
         </div>
       </CardContent>
-      <CardFooter className="px-3 sm:px-4 pb-3 pt-2.5 border-t">
+      <CardFooter className="px-3 sm:px-4 pb-3 pt-2 border-t">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive/90 hover:bg-destructive/10 border-destructive/50 hover:border-destructive/70 text-xs sm:text-sm h-8 sm:h-9">
+            <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive/90 hover:bg-destructive/10 border-destructive/50 hover:border-destructive/70 text-xs h-9">
               <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Remove
             </Button>
           </AlertDialogTrigger>
@@ -136,3 +136,4 @@ export default function PortfolioListItem({ holding, onRemoveHolding, isLoadingM
     </Card>
   );
 }
+

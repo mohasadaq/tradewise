@@ -64,9 +64,9 @@ export default function FilterSortControls({
 }: FilterSortControlsProps) {
   return (
     <div className="p-3 bg-card rounded-lg shadow mb-4 sm:mb-6 sm:p-4">
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:gap-4 xl:grid-cols-5 items-end">
+      <div className="flex flex-col gap-3 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 md:gap-4 items-end">
         
-        <div className="lg:col-span-3 xl:col-span-1 space-y-1">
+        <div className="md:col-span-2 lg:col-span-3 xl:col-span-1 space-y-1">
           <p className="text-sm font-medium text-foreground">Analysis Scope & Filters</p>
           <p className="text-xs text-muted-foreground hidden sm:block">
             Enter symbols (e.g. btc,eth) for specific analysis. Blank analyzes top coins. Stablecoins excluded.
@@ -124,7 +124,7 @@ export default function FilterSortControls({
           </Select>
         </div>
         
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2 w-full xl:col-span-1"> {/* Stacks on xs, then 2 cols */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2 w-full md:col-span-2 lg:col-span-1 xl:col-span-1">
             <div className="space-y-1">
                 <Label htmlFor="sortKey" className="text-xs sm:text-sm">Sort By</Label>
                 <Select
@@ -162,7 +162,7 @@ export default function FilterSortControls({
             </div>
         </div>
       </div>
-      <div className="mt-4 sm:mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-3">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-3">
         <Button variant="outline" onClick={onResetFilters} disabled={isLoading} className="w-full sm:w-auto h-9 text-xs sm:text-sm px-3">
             <ListRestart className="mr-1.5 h-3.5 w-3.5" /> 
             Reset & Show Top
@@ -175,3 +175,4 @@ export default function FilterSortControls({
     </div>
   );
 }
+

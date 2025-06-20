@@ -13,12 +13,12 @@ interface DashboardControlsProps {
 
 export default function DashboardControls({ lastUpdated, onRefresh, isRefreshing }: DashboardControlsProps) {
   return (
-    <div className="mb-4 sm:mb-6 p-3 bg-card rounded-lg shadow flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:items-center sm:p-4">
-      <h2 className="text-lg font-semibold text-foreground text-center sm:text-xl sm:text-left">AI Analysis Dashboard</h2>
+    <div className="mb-4 sm:mb-6 p-3 bg-card rounded-lg shadow flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:p-4">
+      <h2 className="text-base font-semibold text-foreground text-center sm:text-xl sm:text-left">AI Analysis Dashboard</h2>
       <div className="flex flex-col items-center gap-2 w-full sm:w-auto sm:flex-row sm:gap-3">
         <ClientOnly fallback={<span className="text-xs text-muted-foreground">Loading...</span>}>
           {lastUpdated && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
               Last Updated: {lastUpdated.toLocaleTimeString()}
             </span>
           )}
@@ -38,3 +38,4 @@ export default function DashboardControls({ lastUpdated, onRefresh, isRefreshing
     </div>
   );
 }
+

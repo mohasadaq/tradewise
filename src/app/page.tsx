@@ -270,7 +270,6 @@ export default function TradeWisePage() {
     setBacktestRunError(null);
     setCurrentBacktestResults(null);
 
-    // Construct the full configuration for the backtesting service
     const fullConfig: BacktestConfiguration = {
       ...configFromForm,
       coinGeckoId: selectedCoinForBacktest.id,
@@ -296,7 +295,6 @@ export default function TradeWisePage() {
       }
       
       toast({ title: "Running Backtest...", description: `Simulating AI's recommended strategy for ${selectedCoinForBacktest.name}.`});
-      // Use the new runAIStrategyBacktest function
       const results = runAIStrategyBacktest(fullConfig, historicalData);
       
       setCurrentBacktestResults(results);
@@ -413,7 +411,7 @@ export default function TradeWisePage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh_-_var(--header-height)_-_var(--footer-height))]">
-      <main className="flex-grow container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+      <main className="flex-grow container mx-auto px-2 py-3 sm:px-4 sm:py-6">
         <DashboardControls
            lastUpdated={lastUpdated}
            onRefresh={() => performAnalysis(searchQuery.trim() || undefined, selectedTimeFrame)}
@@ -457,7 +455,7 @@ export default function TradeWisePage() {
           />
         )}
       </main>
-      <footer className="py-3 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/50">
+      <footer className="py-3 text-center text-xs text-muted-foreground border-t border-border/50">
         TradeWise &copy; {new Date().getFullYear()}. Crypto data analysis for informational purposes only. Stablecoins are excluded. Data from <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">CoinGecko</a>.
       </footer>
       
@@ -480,7 +478,7 @@ export default function TradeWisePage() {
                     setBacktestRunError(null);
                 }
             }}
-            coin={selectedCoinForBacktest} // Pass the extended coin object
+            coin={selectedCoinForBacktest} 
             onRunBacktest={handleRunBacktestInModal}
             results={currentBacktestResults}
             isLoading={isBacktestRunInProgress}
@@ -490,3 +488,4 @@ export default function TradeWisePage() {
     </div>
   );
 }
+

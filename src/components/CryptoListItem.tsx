@@ -28,7 +28,7 @@ type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"]
 interface CryptoListItemProps {
   recommendation: TradingRecommendation;
   onAddToPortfolio: (coin: TradingRecommendation) => void;
-  onInitiateBacktest: (coin: TradingRecommendation) => void; // New prop
+  onInitiateBacktest: (coin: TradingRecommendation) => void; 
   isAddingToPortfolioPossible: boolean;
 }
 
@@ -64,8 +64,8 @@ const SignalDisplay = ({ signal }: { signal: string }) => {
   }
 
   return (
-    <span className={cn("flex items-center gap-1.5 capitalize text-sm font-medium", textColor)}>
-      <IconComponent className="h-4 w-4" />
+    <span className={cn("flex items-center gap-1 capitalize text-xs font-medium", textColor)}>
+      <IconComponent className="h-3.5 w-3.5" />
       {signalText}
     </span>
   );
@@ -96,7 +96,7 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
       className = "bg-muted text-muted-foreground";
   }
   return (
-    <Badge variant={variant} className={`capitalize ${className} flex items-center gap-1 text-xs px-2 py-1`}>
+    <Badge variant={variant} className={`capitalize ${className} flex items-center gap-1 text-xs px-2 py-0.5`}>
       <IconComponent className="h-3 w-3" />
       {level || "N/A"}
     </Badge>
@@ -116,35 +116,35 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
 
   return (
     <TooltipProvider>
-      <Card className="mb-3 sm:mb-4 shadow-md bg-card">
-        <CardHeader className="pb-3 pt-4 px-3 sm:px-4">
+      <Card className="mb-3 shadow-md bg-card">
+        <CardHeader className="pb-2 pt-3 px-3 sm:px-4">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-base sm:text-lg font-semibold">{rec.coinName} ({rec.coin.toUpperCase()})</CardTitle>
-              <CardDescription className="text-xs">
+              <CardTitle className="text-sm sm:text-base font-semibold">{rec.coinName} ({rec.coin.toUpperCase()})</CardTitle>
+              <CardDescription className="text-xs pt-0.5">
                 <SignalDisplay signal={rec.signal} />
               </CardDescription>
             </div>
             <ConfidenceBadge level={rec.confidenceLevel} />
           </div>
         </CardHeader>
-        <CardContent className="px-3 sm:px-4 pb-3 text-sm space-y-3">
-          <div className="grid grid-cols-3 gap-x-2 sm:gap-x-3 gap-y-2">
+        <CardContent className="px-3 sm:px-4 pb-2 text-xs space-y-2.5">
+          <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
             <div>
-              <p className="text-muted-foreground text-xs">Current Price:</p>
-              <p className="font-medium text-xs sm:text-sm">${formatPrice(rec.currentPrice)}</p>
+              <p className="text-muted-foreground text-xs">Current:</p>
+              <p className="font-medium text-xs">${formatPrice(rec.currentPrice)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">Entry Price:</p>
-              <p className="font-medium text-xs sm:text-sm">${formatPrice(rec.entryPrice)}</p>
+              <p className="text-muted-foreground text-xs">Entry:</p>
+              <p className="font-medium text-xs">${formatPrice(rec.entryPrice)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">Exit Price:</p>
-              <p className="font-medium text-xs sm:text-sm">${formatPrice(rec.exitPrice)}</p>
+              <p className="text-muted-foreground text-xs">Exit:</p>
+              <p className="font-medium text-xs">${formatPrice(rec.exitPrice)}</p>
             </div>
             <div className="col-span-3">
-              <p className="text-muted-foreground text-xs">Potential G/L:</p>
-              <p className={cn("font-medium text-xs sm:text-sm", gainLossColor)}>
+              <p className="text-muted-foreground text-xs">Pot. G/L:</p>
+              <p className={cn("font-medium text-xs", gainLossColor)}>
                 {potentialGainLoss !== null ? (potentialGainLoss > 0 ? "+" : "") + formatPrice(potentialGainLoss) : "N/A"}
               </p>
             </div>
@@ -152,35 +152,35 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
 
           <Accordion type="multiple" className="w-full text-xs">
             <AccordionItem value="strategy" className="border-b">
-                <AccordionTrigger className="py-2 text-xs hover:no-underline">
+                <AccordionTrigger className="py-1.5 text-xs hover:no-underline">
                     <div className="flex items-center gap-1.5">
                         <Brain className="h-3.5 w-3.5 text-primary/90" />
                         <span>Suggested Strategy</span>
                     </div>
                 </AccordionTrigger>
-                <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
+                <AccordionContent className="pt-1 pb-1.5 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
                     <p>{rec.tradingStrategy || "N/A"}</p>
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="timeframe-context" className="border-b">
-              <AccordionTrigger className="py-2 text-xs hover:no-underline">
+              <AccordionTrigger className="py-1.5 text-xs hover:no-underline">
                 <div className="flex items-center gap-1.5">
                   <ClockIcon className="h-3.5 w-3.5 text-primary/90" />
                   <span>Time Frame Context</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
+              <AccordionContent className="pt-1 pb-1.5 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
                 <p>{rec.timeFrameAnalysisContext || "N/A"}</p>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="indicators" className="border-b">
-              <AccordionTrigger className="py-2 text-xs hover:no-underline">
+              <AccordionTrigger className="py-1.5 text-xs hover:no-underline">
                 <div className="flex items-center gap-1.5">
                   <ListChecks className="h-3.5 w-3.5 text-primary/90" />
                   <span>Technical Indicators</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
+              <AccordionContent className="pt-1 pb-1.5 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
                 {rec.technicalIndicators && rec.technicalIndicators.length > 0 ? (
                   <ul className="list-disc list-inside space-y-0.5">
                     {rec.technicalIndicators.map((indicator, idx) => (
@@ -193,24 +193,24 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="analysis" className="border-b">
-              <AccordionTrigger className="py-2 text-xs hover:no-underline">
+              <AccordionTrigger className="py-1.5 text-xs hover:no-underline">
                  <div className="flex items-center gap-1.5">
                   <FileText className="h-3.5 w-3.5 text-primary/90" />
                   <span>Order Book Analysis</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
+              <AccordionContent className="pt-1 pb-1.5 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
                 <p>{rec.orderBookAnalysis || "N/A"}</p>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="risk-management" className="border-b-0">
-              <AccordionTrigger className="py-2 text-xs hover:no-underline">
+              <AccordionTrigger className="py-1.5 text-xs hover:no-underline">
                 <div className="flex items-center gap-1.5">
                   <ShieldAlert className="h-3.5 w-3.5 text-primary/90" />
                   <span>Risk Management</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
+              <AccordionContent className="pt-1 pb-1.5 pl-2 pr-1 text-muted-foreground whitespace-pre-wrap break-words">
                 <p>{rec.riskManagementNotes || "N/A"}</p>
               </AccordionContent>
             </AccordionItem>
@@ -220,23 +220,23 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
             <Button 
                 variant="outline" 
                 size="sm" 
-                className="w-full sm:flex-1 text-xs sm:text-sm h-9"
+                className="w-full sm:flex-1 text-xs h-9"
                 onClick={() => onAddToPortfolio(rec)}
                 disabled={!isAddingToPortfolioPossible || !rec.id || !rec.symbol}
                 aria-label="Add to portfolio"
             >
-                {!isAddingToPortfolioPossible ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusSquare className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                {!isAddingToPortfolioPossible ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusSquare className="mr-1.5 h-3.5 w-3.5" />}
                 Add to Portfolio
             </Button>
             <Button
                 variant="outline"
                 size="sm"
-                className="w-full sm:flex-1 text-xs sm:text-sm h-9"
+                className="w-full sm:flex-1 text-xs h-9"
                 onClick={() => onInitiateBacktest(rec)}
                 disabled={!rec.id || !rec.symbol}
                 aria-label="Backtest this coin"
             >
-                <TestTube2 className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <TestTube2 className="mr-1.5 h-3.5 w-3.5" />
                 Backtest
             </Button>
         </CardFooter>
@@ -244,3 +244,4 @@ export default function CryptoListItem({ recommendation: rec, onAddToPortfolio, 
     </TooltipProvider>
   );
 }
+

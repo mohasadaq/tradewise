@@ -56,11 +56,11 @@ const formatPercentage = (percentage: number | undefined | null) => {
 };
 
 const renderSkeletonCellsForHolding = (keyPrefix: string): ReactNode[] => [
-    <TableCell key={`${keyPrefix}-skel-cp`} className="text-right px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-5 w-16 sm:w-20 ml-auto" /></TableCell>,
-    <TableCell key={`${keyPrefix}-skel-tc`} className="text-right px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-5 w-16 sm:w-20 ml-auto" /></TableCell>,
-    <TableCell key={`${keyPrefix}-skel-cv`} className="text-right px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-5 w-20 sm:w-24 ml-auto" /></TableCell>,
-    <TableCell key={`${keyPrefix}-skel-pl`} className="text-right px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-5 w-16 sm:w-20 ml-auto" /></TableCell>,
-    <TableCell key={`${keyPrefix}-skel-plp`} className="text-right px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-5 w-12 sm:w-16 ml-auto" /></TableCell>
+    <TableCell key={`${keyPrefix}-skel-cp`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-4 w-12 sm:w-16 ml-auto" /></TableCell>,
+    <TableCell key={`${keyPrefix}-skel-tc`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-4 w-12 sm:w-16 ml-auto" /></TableCell>,
+    <TableCell key={`${keyPrefix}-skel-cv`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-4 w-16 sm:w-20 ml-auto" /></TableCell>,
+    <TableCell key={`${keyPrefix}-skel-pl`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-4 w-12 sm:w-16 ml-auto" /></TableCell>,
+    <TableCell key={`${keyPrefix}-skel-plp`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-4 w-10 sm:w-12 ml-auto" /></TableCell>
 ];
   
 const renderValueCellsForHolding = (holding: EnrichedPortfolioHolding): ReactNode[] => {
@@ -69,13 +69,13 @@ const renderValueCellsForHolding = (holding: EnrichedPortfolioHolding): ReactNod
                    : holding.profitLoss < 0 ? "text-destructive" 
                    : "text-foreground";
     return [
-      <TableCell key={`${holding.id}-val-cp`} className="text-right px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm">${formatPrice(holding.currentPrice, 2, 5)}</TableCell>,
-      <TableCell key={`${holding.id}-val-tc`} className="text-right px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm">${formatPrice(holding.totalCost)}</TableCell>,
-      <TableCell key={`${holding.id}-val-cv`} className="text-right px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm">${formatPrice(holding.currentValue)}</TableCell>,
-      <TableCell key={`${holding.id}-val-pl`} className={cn("text-right font-medium tabular-nums text-xs sm:text-sm px-2 py-2 sm:px-4 sm:py-3", plColor)}>
+      <TableCell key={`${holding.id}-val-cp`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5 tabular-nums text-xs">${formatPrice(holding.currentPrice, 2, 5)}</TableCell>,
+      <TableCell key={`${holding.id}-val-tc`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5 tabular-nums text-xs">${formatPrice(holding.totalCost)}</TableCell>,
+      <TableCell key={`${holding.id}-val-cv`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5 tabular-nums text-xs">${formatPrice(holding.currentValue)}</TableCell>,
+      <TableCell key={`${holding.id}-val-pl`} className={cn("text-right font-medium tabular-nums text-xs px-2 py-2 sm:px-3 sm:py-2.5", plColor)}>
         {(holding.profitLoss != null && holding.profitLoss > 0 ? "+" : "") + `$${formatPrice(holding.profitLoss)}`}
       </TableCell>,
-      <TableCell key={`${holding.id}-val-plp`} className={cn("text-right font-medium tabular-nums text-xs sm:text-sm px-2 py-2 sm:px-4 sm:py-3", plColor)}>
+      <TableCell key={`${holding.id}-val-plp`} className={cn("text-right font-medium tabular-nums text-xs px-2 py-2 sm:px-3 sm:py-2.5", plColor)}>
         {(holding.profitLossPercentage != null && holding.profitLossPercentage > 0 ? "+" : "") + `${formatPercentage(holding.profitLossPercentage)}`}
       </TableCell>
     ];
@@ -92,13 +92,13 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
     }
     return Array.from({ length: count }).map((_, index) => {
       const staticSkeletonCells: ReactNode[] = [
-        <TableCell key={`skel-initial-${index}-name`} className="px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-5 w-20 sm:w-24" /></TableCell>,
-        <TableCell key={`skel-initial-${index}-symbol`} className="px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-5 w-10 sm:w-12" /></TableCell>,
-        <TableCell key={`skel-initial-${index}-qty`} className="text-right px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-5 w-16 sm:w-20 ml-auto" /></TableCell>,
-        <TableCell key={`skel-initial-${index}-buyprice`} className="text-right px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-5 w-16 sm:w-20 ml-auto" /></TableCell>
+        <TableCell key={`skel-initial-${index}-name`} className="px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-4 w-16 sm:w-20" /></TableCell>,
+        <TableCell key={`skel-initial-${index}-symbol`} className="px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-4 w-8 sm:w-10" /></TableCell>,
+        <TableCell key={`skel-initial-${index}-qty`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-4 w-12 sm:w-16 ml-auto" /></TableCell>,
+        <TableCell key={`skel-initial-${index}-buyprice`} className="text-right px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-4 w-12 sm:w-16 ml-auto" /></TableCell>
       ];
       const dynamicSkeletonCells = renderSkeletonCellsForHolding(`skeleton-initial-data-${index}`);
-      const actionSkeletonCell = <TableCell key={`skel-initial-${index}-action`} className="text-center px-2 py-2 sm:px-4 sm:py-3"><Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded mx-auto" /></TableCell>;
+      const actionSkeletonCell = <TableCell key={`skel-initial-${index}-action`} className="text-center px-2 py-2 sm:px-3 sm:py-2.5"><Skeleton className="h-7 w-7 rounded mx-auto" /></TableCell>;
       
       return (
         <TableRow key={`skeleton-initial-${index}`}>
@@ -112,10 +112,10 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
 
   if (isMobile) {
     return (
-      <div className="mt-6 space-y-3 sm:space-y-4">
-        <div className="flex justify-between items-center px-1 sm:px-0">
-          <h2 className="text-lg sm:text-xl font-semibold">Your Holdings</h2>
-          <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoadingMarketData && holdings.length > 0} className="h-8 sm:h-9 text-xs sm:text-sm">
+      <div className="mt-4 sm:mt-6 space-y-3">
+        <div className="flex justify-between items-center px-1">
+          <h2 className="text-base sm:text-lg font-semibold">Your Holdings</h2>
+          <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoadingMarketData && holdings.length > 0} className="h-8 text-xs">
             <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isLoadingMarketData && holdings.length > 0 ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -123,7 +123,7 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
         {isLoadingMarketData && holdings.length === 0 ? (
           renderSkeletonRowsForInitialLoad(3, true)
         ) : !isLoadingMarketData && holdings.length === 0 ? (
-          <div className="py-10 text-center text-sm text-muted-foreground">
+          <div className="py-8 text-center text-xs text-muted-foreground">
             You have no holdings in your portfolio.
           </div>
         ) : (
@@ -141,9 +141,9 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
   }
   
   return (
-    <div className="mt-6 rounded-lg border shadow-md overflow-hidden bg-card">
+    <div className="mt-4 sm:mt-6 rounded-lg border shadow-md overflow-hidden bg-card">
        <div className="flex justify-between items-center p-3 sm:p-4 border-b">
-        <h2 className="text-lg sm:text-xl font-semibold">Your Holdings</h2>
+        <h2 className="text-base sm:text-xl font-semibold">Your Holdings</h2>
         <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoadingMarketData && holdings.length > 0} className="h-8 sm:h-9 text-xs sm:text-sm">
           <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isLoadingMarketData && holdings.length > 0 ? 'animate-spin' : ''}`} />
           Refresh Prices
@@ -153,16 +153,16 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-card">
-              <TableHead className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">Coin</TableHead>
-              <TableHead className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">Symbol</TableHead>
-              <TableHead className="text-right px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">Quantity</TableHead>
-              <TableHead className="text-right px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">Avg. Buy Price</TableHead>
-              <TableHead className="text-right px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">Current Price</TableHead>
-              <TableHead className="text-right px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">Total Cost</TableHead>
-              <TableHead className="text-right px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">Current Value</TableHead>
-              <TableHead className="text-right px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">P/L</TableHead>
-              <TableHead className="text-right px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">P/L %</TableHead>
-              <TableHead className="text-center px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">Actions</TableHead>
+              <TableHead className="px-2 py-2 sm:px-3 sm:py-2.5 text-xs">Coin</TableHead>
+              <TableHead className="px-2 py-2 sm:px-3 sm:py-2.5 text-xs">Symbol</TableHead>
+              <TableHead className="text-right px-2 py-2 sm:px-3 sm:py-2.5 text-xs">Quantity</TableHead>
+              <TableHead className="text-right px-2 py-2 sm:px-3 sm:py-2.5 text-xs">Avg. Buy Price</TableHead>
+              <TableHead className="text-right px-2 py-2 sm:px-3 sm:py-2.5 text-xs">Current Price</TableHead>
+              <TableHead className="text-right px-2 py-2 sm:px-3 sm:py-2.5 text-xs">Total Cost</TableHead>
+              <TableHead className="text-right px-2 py-2 sm:px-3 sm:py-2.5 text-xs">Current Value</TableHead>
+              <TableHead className="text-right px-2 py-2 sm:px-3 sm:py-2.5 text-xs">P/L</TableHead>
+              <TableHead className="text-right px-2 py-2 sm:px-3 sm:py-2.5 text-xs">P/L %</TableHead>
+              <TableHead className="text-center px-2 py-2 sm:px-3 sm:py-2.5 text-xs">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -176,20 +176,20 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
               </TableRow>
             ) : (
               holdings.map((holding) => (
-                  <TableRow key={holding.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">{holding.name}</TableCell>
-                    <TableCell className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm">{holding.symbol.toUpperCase()}</TableCell>
-                    <TableCell className="text-right px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm">{formatQuantity(holding.quantity)}</TableCell>
-                    <TableCell className="text-right px-2 py-2 sm:px-4 sm:py-3 tabular-nums text-xs sm:text-sm">${formatPrice(holding.purchasePrice, 2, 5)}</TableCell>
+                  <TableRow key={holding.id} className="hover:bg-muted/50 text-xs">
+                    <TableCell className="font-medium px-2 py-2 sm:px-3 sm:py-2.5">{holding.name}</TableCell>
+                    <TableCell className="px-2 py-2 sm:px-3 sm:py-2.5">{holding.symbol.toUpperCase()}</TableCell>
+                    <TableCell className="text-right px-2 py-2 sm:px-3 sm:py-2.5 tabular-nums">{formatQuantity(holding.quantity)}</TableCell>
+                    <TableCell className="text-right px-2 py-2 sm:px-3 sm:py-2.5 tabular-nums">${formatPrice(holding.purchasePrice, 2, 5)}</TableCell>
                     {...(isLoadingMarketData || holding.currentPrice === undefined ? 
                         renderSkeletonCellsForHolding(holding.id) : 
                         renderValueCellsForHolding(holding)
                     )}
-                    <TableCell className="text-center px-2 py-2 sm:px-4 sm:py-3">
+                    <TableCell className="text-center px-2 py-2 sm:px-3 sm:py-2.5">
                        <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80 h-7 w-7 sm:h-8 sm:w-8">
-                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80 h-7 w-7">
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -217,3 +217,4 @@ export default function PortfolioTable({ holdings, onRemoveHolding, isLoadingMar
     </div>
   );
 }
+
