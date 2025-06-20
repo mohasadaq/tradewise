@@ -52,8 +52,7 @@ export default function TradeWisePage() {
   const performAnalysis = useCallback(async (symbolsToFetch?: string, timeFrameToUse?: TimeFrame, isAutoRefresh: boolean = false) => {
     setIsLoading(true);
     setError(null);
-    let fetchToastId: string | null = null;
-
+    
     const currentSymbols = symbolsToFetch?.trim() || "";
     const currentTimeFrame = timeFrameToUse || selectedTimeFrame;
 
@@ -61,9 +60,10 @@ export default function TradeWisePage() {
     const analysisTargetDescription = isSearchingSpecificSymbols ? `symbols: ${currentSymbols}` : `top ${NUMBER_OF_COINS_TO_FETCH_DEFAULT} coins`;
     const timeFrameDescription = `(${currentTimeFrame} view)`;
 
-    if (!isAutoRefresh) {
-       fetchToastId = toast({ title: "Fetching Market Data...", description: `Analyzing ${analysisTargetDescription} ${timeFrameDescription}.`}).id;
-    }
+    // Non-error toasts removed as per guidelines. Loading is indicated by button state and skeleton.
+    // if (!isAutoRefresh) {
+    //    toast({ title: "Fetching Market Data...", description: `Analyzing ${analysisTargetDescription} ${timeFrameDescription}.`});
+    // }
 
     try {
       const marketData: CryptoCoinData[] = await fetchCoinData(
@@ -77,11 +77,7 @@ export default function TradeWisePage() {
         const message = isSearchingSpecificSymbols ? `No market data found for symbols: ${currentSymbols} (${currentTimeFrame} view). Please check symbols/timeframe.` : `No market data found for top coins (${currentTimeFrame} view).`;
         setError(message);
         const errorTitle = isAutoRefresh ? "Auto-Refresh: Market Data Error" : "Market Data Error";
-        if (fetchToastId) {
-            toast({id: fetchToastId, title: "Market Data Error", description: message, variant: "destructive" });
-        } else if (isAutoRefresh) { // Ensure auto-refresh errors also show toasts
-            toast({ title: errorTitle, description: message, variant: "destructive" });
-        }
+        toast({ title: errorTitle, description: message, variant: "destructive" });
         setIsLoading(false);
         return;
       }
@@ -93,19 +89,14 @@ export default function TradeWisePage() {
         const message = isSearchingSpecificSymbols ? `No non-stablecoin market data found for symbols: ${currentSymbols} (${currentTimeFrame} view).` : `No non-stablecoins found for analysis among top coins (${currentTimeFrame} view).`;
         setError(message);
         const errorTitle = isAutoRefresh ? "Auto-Refresh: No Coins for Analysis" : "No Coins for Analysis";
-        if (fetchToastId) {
-          toast({id: fetchToastId, title: "No Coins for Analysis", description: message, variant: "destructive" });
-        } else if (isAutoRefresh) {
-          toast({ title: errorTitle, description: message, variant: "destructive" });
-        }
+        toast({ title: errorTitle, description: message, variant: "destructive" });
         setIsLoading(false);
         return;
       }
 
-      if (fetchToastId) { 
-        toast({id: fetchToastId, title: "Market Data Fetched", description: `Found ${nonStableMarketData.length} non-stablecoin(s). Starting AI analysis ${timeFrameDescription}...`});
-      }
-
+      // Non-error toast removed.
+      // toast({ title: "Market Data Fetched", description: `Found ${nonStableMarketData.length} non-stablecoin(s). Starting AI analysis ${timeFrameDescription}...`});
+      
       const aiInputData: AICoinAnalysisInputData[] = nonStableMarketData.map(md => ({
         id: md.id,
         symbol: md.symbol,
@@ -114,7 +105,7 @@ export default function TradeWisePage() {
         market_cap: md.market_cap,
         total_volume: md.total_volume,
         price_change_percentage_in_selected_timeframe: md.price_change_percentage_selected_timeframe,
-        selected_time_frame: currentTimeFrame, // Pass the user's selected time frame
+        selected_time_frame: currentTimeFrame,
       }));
 
       const input = { coinsData: aiInputData };
@@ -137,22 +128,17 @@ export default function TradeWisePage() {
         });
         setRecommendations(updatedRecommendations);
         setLastUpdated(new Date());
-        const successMessage = `Found ${updatedRecommendations.length} recommendations for ${nonStableMarketData.length} non-stablecoin(s) from ${analysisTargetDescription} ${timeFrameDescription}.`;
-        if (fetchToastId) { 
-            toast({id: fetchToastId, title: "Analysis Complete", description: successMessage });
-        } else if (!isAutoRefresh) { 
-            toast({ title: "Analysis Complete", description: successMessage });
-        }
+        // Non-error toast removed. Success is indicated by data display.
+        // const successMessage = `Found ${updatedRecommendations.length} recommendations for ${nonStableMarketData.length} non-stablecoin(s) from ${analysisTargetDescription} ${timeFrameDescription}.`;
+        // if (!isAutoRefresh) { 
+        //     toast({ title: "Analysis Complete", description: successMessage });
+        // }
       } else {
         setRecommendations([]);
         const message = `No recommendations found or unexpected response from AI for ${analysisTargetDescription} ${timeFrameDescription}.`;
         setError(message);
         const errorTitle = isAutoRefresh ? "Auto-Refresh: Analysis Issue" : "Analysis Issue";
-        if (fetchToastId) {
-            toast({id: fetchToastId, title: "Analysis Issue", description: message, variant: "destructive" });
-        } else if (isAutoRefresh) {
-            toast({ title: errorTitle, description: message, variant: "destructive" });
-        }
+        toast({ title: errorTitle, description: message, variant: "destructive" });
       }
     } catch (err) {
       console.error("Error performing analysis:", err);
@@ -162,13 +148,7 @@ export default function TradeWisePage() {
       setRecommendations([]);
       const errorTitle = isAutoRefresh ? "Auto-Refresh: Analysis Failed" : "Analysis Failed";
       const toastErrorMessage = isAutoRefresh ? `Auto-refresh: ${errorMessage}`: `Error: ${errorMessage}`;
-       if (fetchToastId) {
-            toast({id: fetchToastId, title: "Analysis Failed", description: `Error: ${errorMessage}`, variant: "destructive" });
-        } else if (isAutoRefresh) {
-            toast({ title: errorTitle, description: toastErrorMessage, variant: "destructive" });
-        } else { // For manual trigger errors not covered by fetchToastId
-            toast({ title: "Analysis Failed", description: `Error: ${errorMessage}`, variant: "destructive" });
-        }
+      toast({ title: errorTitle, description: toastErrorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -322,3 +302,4 @@ export default function TradeWisePage() {
     </div>
   );
 }
+
