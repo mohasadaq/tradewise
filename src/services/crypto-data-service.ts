@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { format, getUnixTime, parseISO } from 'date-fns';
 
 // Time frames we offer in the UI and pass to AI. These are the values used in FilterSortControls.
 const APP_SUPPORTED_TIME_FRAMES = ["15m", "30m", "1h", "4h", "12h", "24h", "7d", "30d"] as const;
@@ -17,17 +18,16 @@ function mapAppTimeFrameToCoinGeckoParam(appTimeFrame: AppTimeFrame): string {
     case "15m":
     case "30m":
     case "1h":
-      return "1h"; // For 15m, 30m, and 1h analysis, use CoinGecko's 1h price change data.
+      return "1h"; 
     case "4h":
     case "12h":
     case "24h":
-      return "24h"; // For 4h, 12h, and 24h analysis, use CoinGecko's 24h price change data.
+      return "24h"; 
     case "7d":
       return "7d";
     case "30d":
       return "30d";
     default:
-      // Fallback, though all AppTimeFrame values should be covered.
       console.warn(`Unknown AppTimeFrame: ${appTimeFrame}, defaulting to 24h for CoinGecko param.`);
       return "24h";
   }
@@ -73,7 +73,7 @@ const CoinGeckoMarketCoinSchema = z.object({
     percentage: z.number(),
   }).nullable().optional(),
   last_updated: z.string().datetime({ offset: true }).nullable(),
-}).catchall(z.any()); // Allows other properties like price_change_percentage_Xh_in_currency
+}).catchall(z.any()); 
 
 
 const ProcessedCoinDataSchema = z.object({
@@ -122,15 +122,12 @@ export async function fetchCoinList(): Promise<CoinListItem[]> {
 export async function fetchCoinData(
   count: number = 5,
   symbols?: string,
-  // User's selected time frame for analysis (e.g., "15m", "1h", "4h", "24h", "7d")
   userSelectedTimeFrame: AppTimeFrame = "24h" 
 ): Promise<CryptoCoinData[]> {
   const vs_currency = 'usd';
   const order = 'market_cap_desc';
   let coinGeckoIdsToFetch: string | undefined = undefined;
 
-  // Map the user's selected time frame to the actual parameter CoinGecko API supports
-  // for `price_change_percentage`. This data point will be an approximation for some user selections.
   const coinGeckoTimeFrameParam = mapAppTimeFrameToCoinGeckoParam(userSelectedTimeFrame);
 
   if (symbols && symbols.trim() !== '') {
@@ -138,7 +135,6 @@ export async function fetchCoinData(
     const symbolArray = symbols.toLowerCase().split(',').map(s => s.trim()).filter(s => s);
     const ids: string[] = [];
     for (const sym of symbolArray) {
-      // Try matching symbol first, then ID (slug) if symbol fails.
       let foundCoin = coinList.find(coin => coin.symbol.toLowerCase() === sym);
       if (!foundCoin) {
         foundCoin = coinList.find(coin => coin.id.toLowerCase() === sym);
@@ -197,8 +193,6 @@ export async function fetchCoinData(
       throw new Error("Invalid data format received from CoinGecko API (coins/markets).");
     }
 
-    // This key is used to extract the price change % from CoinGecko's response.
-    // It corresponds to the `coinGeckoTimeFrameParam` we requested.
     const priceChangeKeyForExtraction = `price_change_percentage_${coinGeckoTimeFrameParam}_in_currency`;
 
     const processedData: CryptoCoinData[] = validationResult.data.map(coin => {
@@ -210,9 +204,6 @@ export async function fetchCoinData(
         current_price: coin.current_price,
         market_cap: coin.market_cap,
         total_volume: coin.total_volume,
-        // This field now holds the price change from the `coinGeckoTimeFrameParam` (e.g., 1h or 24h).
-        // The AI will be informed that this is the available metric, but the `selected_time_frame` (user's original choice)
-        // should guide its analysis duration.
         price_change_percentage_selected_timeframe: coinTyped[priceChangeKeyForExtraction] ?? null,
         last_updated: coin.last_updated,
       };
@@ -226,5 +217,71 @@ export async function fetchCoinData(
         throw error;
     }
     throw new Error("An unknown error occurred while fetching market data from CoinGecko.");
+  }
+}
+
+
+// For Backtesting
+const HistoricalPricePointSchema = z.object({
+  date: z.date(),
+  price: z.number(),
+});
+export type HistoricalPricePoint = z.infer<typeof HistoricalPricePointSchema>;
+
+const CoinGeckoMarketChartResponseSchema = z.object({
+  prices: z.array(z.tuple([z.number(), z.number()])), // [timestamp, price]
+});
+
+export async function fetchHistoricalCoinData(
+  coinId: string,
+  startDate: Date,
+  endDate: Date,
+  vs_currency: string = 'usd'
+): Promise<HistoricalPricePoint[]> {
+  const fromTimestamp = getUnixTime(startDate);
+  const toTimestamp = getUnixTime(endDate);
+
+  if (fromTimestamp >= toTimestamp) {
+    throw new Error('Start date must be before end date.');
+  }
+
+  const url = `${COINGECKO_API_BASE_URL}/coins/${coinId}/market_chart/range?vs_currency=${vs_currency}&from=${fromTimestamp}&to=${toTimestamp}`;
+
+  try {
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store', // Historical data can change, but less frequently for closed periods. Consider revalidate.
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`CoinGecko API error (market_chart/range): ${response.status} ${response.statusText}`, { errorBody, url });
+      if (response.status === 429) {
+        throw new Error(`CoinGecko API rate limit exceeded. Please wait and try again. (Status: 429)`);
+      }
+      throw new Error(`Failed to fetch historical market data for ${coinId}: ${response.statusText} (Status: ${response.status})`);
+    }
+
+    const data = await response.json();
+    const validationResult = CoinGeckoMarketChartResponseSchema.safeParse(data);
+
+    if (!validationResult.success) {
+      console.error("CoinGecko API response validation error (market_chart/range):", validationResult.error.issues, {dataReceived: data});
+      throw new Error(`Invalid historical data format received for ${coinId}.`);
+    }
+    
+    // CoinGecko returns daily data if range > 90 days, hourly for 1-90 days, minutely for <1 day.
+    // For simplicity, we'll use what we get and assume it's daily close if it's daily.
+    return validationResult.data.prices.map(([timestamp, price]) => ({
+      date: new Date(timestamp),
+      price: price,
+    }));
+
+  } catch (error) {
+    console.error(`Error fetching historical market data for ${coinId}:`, error);
+    if (error instanceof Error) {
+        throw error;
+    }
+    throw new Error(`An unknown error occurred while fetching historical market data for ${coinId}.`);
   }
 }

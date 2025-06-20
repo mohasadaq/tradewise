@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Briefcase, Bot } from "lucide-react";
+import { LayoutDashboard, Briefcase, History } from "lucide-react"; // Added History icon
 import {
   SidebarHeader,
   SidebarMenu,
@@ -13,6 +13,7 @@ import {
   SidebarContent,
   useSidebar, 
 } from "@/components/ui/sidebar";
+import { Bot } from "lucide-react"; // Ensured Bot icon is imported
 
 export default function AppSidebarNavigation() {
   const pathname = usePathname();
@@ -29,15 +30,17 @@ export default function AppSidebarNavigation() {
       label: "Portfolio",
       icon: Briefcase,
     },
+    {
+      href: "/backtesting", // New Backtesting menu item
+      label: "Backtesting",
+      icon: History,
+    },
   ];
 
   const handleLinkClick = () => {
     if (isMobile) {
       setOpenMobile(false); // Close sheet on mobile
     } else {
-      // Only collapse if it's expanded. If it's already collapsed (icon only), do nothing.
-      // This behavior is now default: sidebar auto-collapses if it was expanded.
-      // If user clicks while it's collapsed, it navigates but stays collapsed.
       // If it was manually expanded by user, then clicking collapses it.
       if (sidebarOpen) {
         setOpen(false);
