@@ -15,7 +15,7 @@ import SkeletonListItem from "./SkeletonListItem";
 
 export default function SkeletonTable({ rows = 3 }: { rows?: number }) {
   const isMobile = useIsMobile();
-  const numColumns = 11; // Updated to include new Time Frame Context column
+  const numColumns = 12; // Coin, Current, Entry, Exit, Pot. G/L, Signal, Strategy, Risk, Confidence, Indicators, Order Book, TF Context
 
   if (isMobile) {
     return (
@@ -43,10 +43,11 @@ export default function SkeletonTable({ rows = 3 }: { rows?: number }) {
           <TableBody>
             {Array.from({ length: rows }).map((_, rowIndex) => {
               const cells = [
-                <TableCell key={`skel-cell-${rowIndex}-1`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-12 sm:w-16" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-0`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-12 sm:w-16" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-1`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>,
                 <TableCell key={`skel-cell-${rowIndex}-2`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>,
                 <TableCell key={`skel-cell-${rowIndex}-3`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>,
-                <TableCell key={`skel-cell-${rowIndex}-4`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-24" /></TableCell>,
+                <TableCell key={`skel-cell-${rowIndex}-4`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-16 sm:w-20" /></TableCell>, // Pot. G/L
                 <TableCell key={`skel-cell-${rowIndex}-5`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-16 sm:w-20" /></TableCell>,
                 <TableCell key={`skel-cell-${rowIndex}-6`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-4 sm:h-5 w-20 sm:w-28" /></TableCell>,
                 <TableCell key={`skel-cell-${rowIndex}-7`} className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap"><Skeleton className="h-6 w-6 sm:h-7 sm:w-7 rounded-full" /></TableCell>,

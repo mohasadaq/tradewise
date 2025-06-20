@@ -17,21 +17,25 @@ export default function SkeletonListItem() {
         </div>
       </CardHeader>
       <CardContent className="px-4 pb-4 text-sm space-y-3">
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-            <div className="col-span-2 sm:col-span-1">
-            <Skeleton className="h-3 w-20 mb-1" /> {/* Label */}
-            <Skeleton className="h-5 w-24" />     {/* Value Current Price */}
+        <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+            <div>
+                <Skeleton className="h-3 w-20 mb-1" /> {/* Label Current Price */}
+                <Skeleton className="h-5 w-24" />     {/* Value Current Price */}
             </div>
-            <div className="col-span-1">
-            <Skeleton className="h-3 w-16 mb-1" /> {/* Label */}
-            <Skeleton className="h-5 w-20" />     {/* Value Entry Price */}
+            <div>
+                <Skeleton className="h-3 w-16 mb-1" /> {/* Label Entry Price */}
+                <Skeleton className="h-5 w-20" />     {/* Value Entry Price */}
             </div>
-            <div className="col-span-1">
-            <Skeleton className="h-3 w-16 mb-1" /> {/* Label */}
-            <Skeleton className="h-5 w-20" />     {/* Value Exit Price */}
+            <div>
+                <Skeleton className="h-3 w-16 mb-1" /> {/* Label Exit Price */}
+                <Skeleton className="h-5 w-20" />     {/* Value Exit Price */}
             </div>
-            <div className="col-span-2">
-                <Skeleton className="h-3 w-24 mb-1" /> {/* Label */}
+            <div className="col-span-3">
+                <Skeleton className="h-3 w-24 mb-1" /> {/* Label Potential G/L */}
+                <Skeleton className="h-5 w-28" />     {/* Value Potential G/L */}
+            </div>
+            <div className="col-span-3">
+                <Skeleton className="h-3 w-24 mb-1" /> {/* Label Strategy */}
                 <div className="flex items-center gap-1">
                     <Skeleton className="h-4 w-4 rounded-sm" /> {/* Icon */}
                     <Skeleton className="h-4 w-32" />          {/* Strategy Text */}

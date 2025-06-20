@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText, ShieldAlert, ClockIcon } from "lucide-react";
+import { Info, Brain, TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle, Minus, ListChecks, FileText, ShieldAlert, ClockIcon, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type TradingRecommendation = AnalyzeCryptoTradesOutput["tradingRecommendations"][0] & { 
@@ -97,6 +97,15 @@ const ConfidenceBadge = ({ level }: { level: string }) => {
 
 
 export default function CryptoListItem({ recommendation: rec }: CryptoListItemProps) {
+  const potentialGainLoss = (typeof rec.exitPrice === 'number' && typeof rec.currentPrice === 'number') 
+                              ? rec.exitPrice - rec.currentPrice 
+                              : null;
+  let gainLossColor = "text-foreground";
+  if (potentialGainLoss !== null) {
+    if (potentialGainLoss > 0) gainLossColor = "text-accent";
+    else if (potentialGainLoss < 0) gainLossColor = "text-destructive";
+  }
+
   return (
     <TooltipProvider>
       <Card className="mb-4 shadow-md bg-card">
@@ -112,20 +121,26 @@ export default function CryptoListItem({ recommendation: rec }: CryptoListItemPr
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4 text-sm space-y-3">
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-            <div className="col-span-2 sm:col-span-1">
+          <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+            <div>
               <p className="text-muted-foreground text-xs">Current Price:</p>
               <p className="font-medium">${formatPrice(rec.currentPrice)}</p>
             </div>
-            <div className="col-span-1">
+            <div>
               <p className="text-muted-foreground text-xs">Entry Price:</p>
               <p className="font-medium">${formatPrice(rec.entryPrice)}</p>
             </div>
-            <div className="col-span-1">
+            <div>
               <p className="text-muted-foreground text-xs">Exit Price:</p>
               <p className="font-medium">${formatPrice(rec.exitPrice)}</p>
             </div>
-            <div className="col-span-2">
+            <div className="col-span-3">
+              <p className="text-muted-foreground text-xs">Potential G/L:</p>
+              <p className={cn("font-medium", gainLossColor)}>
+                {potentialGainLoss !== null ? (potentialGainLoss > 0 ? "+" : "") + formatPrice(potentialGainLoss) : "N/A"}
+              </p>
+            </div>
+            <div className="col-span-3">
               <p className="text-muted-foreground text-xs mb-0.5">Suggested Strategy:</p>
               <Tooltip delayDuration={100}>
                   <TooltipTrigger asChild>

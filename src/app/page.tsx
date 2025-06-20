@@ -60,11 +60,6 @@ export default function TradeWisePage() {
     const analysisTargetDescription = isSearchingSpecificSymbols ? `symbols: ${currentSymbols}` : `top ${NUMBER_OF_COINS_TO_FETCH_DEFAULT} coins`;
     const timeFrameDescription = `(${currentTimeFrame} view)`;
 
-    // Non-error toasts removed as per guidelines. Loading is indicated by button state and skeleton.
-    // if (!isAutoRefresh) {
-    //    toast({ title: "Fetching Market Data...", description: `Analyzing ${analysisTargetDescription} ${timeFrameDescription}.`});
-    // }
-
     try {
       const marketData: CryptoCoinData[] = await fetchCoinData(
         NUMBER_OF_COINS_TO_FETCH_DEFAULT,
@@ -93,9 +88,6 @@ export default function TradeWisePage() {
         setIsLoading(false);
         return;
       }
-
-      // Non-error toast removed.
-      // toast({ title: "Market Data Fetched", description: `Found ${nonStableMarketData.length} non-stablecoin(s). Starting AI analysis ${timeFrameDescription}...`});
       
       const aiInputData: AICoinAnalysisInputData[] = nonStableMarketData.map(md => ({
         id: md.id,
@@ -128,11 +120,6 @@ export default function TradeWisePage() {
         });
         setRecommendations(updatedRecommendations);
         setLastUpdated(new Date());
-        // Non-error toast removed. Success is indicated by data display.
-        // const successMessage = `Found ${updatedRecommendations.length} recommendations for ${nonStableMarketData.length} non-stablecoin(s) from ${analysisTargetDescription} ${timeFrameDescription}.`;
-        // if (!isAutoRefresh) { 
-        //     toast({ title: "Analysis Complete", description: successMessage });
-        // }
       } else {
         setRecommendations([]);
         const message = `No recommendations found or unexpected response from AI for ${analysisTargetDescription} ${timeFrameDescription}.`;
@@ -155,7 +142,7 @@ export default function TradeWisePage() {
   }, [toast, selectedTimeFrame]);
 
   useEffect(() => {
-    performAnalysis(undefined, DEFAULT_TIME_FRAME, false); // Initial load is not an auto-refresh
+    performAnalysis(undefined, DEFAULT_TIME_FRAME, false); 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
 
@@ -219,6 +206,12 @@ export default function TradeWisePage() {
         case "exitPrice":
           valA = a.exitPrice ?? -Infinity;
           valB = b.exitPrice ?? -Infinity;
+          break;
+        case "potentialGainLoss":
+          const gainA = (typeof a.exitPrice === 'number' && typeof a.currentPrice === 'number') ? a.exitPrice - a.currentPrice : -Infinity;
+          const gainB = (typeof b.exitPrice === 'number' && typeof b.currentPrice === 'number') ? b.exitPrice - b.currentPrice : -Infinity;
+          valA = gainA;
+          valB = gainB;
           break;
         case "signal":
           valA = signalOrder[a.signal?.toLowerCase()] ?? 3;

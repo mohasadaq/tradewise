@@ -16,7 +16,7 @@ import { ListRestart, RefreshCw, Search, Clock } from "lucide-react";
 import type { AppTimeFrame } from '@/services/crypto-data-service'; // Import AppTimeFrame
 
 export type ConfidenceFilter = "All" | "High" | "Medium" | "Low";
-export type SortKey = "coin" | "currentPrice" | "entryPrice" | "exitPrice" | "signal" | "confidenceLevel";
+export type SortKey = "coin" | "currentPrice" | "entryPrice" | "exitPrice" | "signal" | "confidenceLevel" | "potentialGainLoss";
 export type SortDirection = "asc" | "desc";
 export type TimeFrame = AppTimeFrame; // Use AppTimeFrame from service
 
@@ -141,6 +141,7 @@ export default function FilterSortControls({
                     <SelectItem value="currentPrice">Current Price</SelectItem>
                     <SelectItem value="entryPrice">Entry Price</SelectItem>
                     <SelectItem value="exitPrice">Exit Price</SelectItem>
+                    <SelectItem value="potentialGainLoss">Pot. G/L</SelectItem>
                     <SelectItem value="signal">Signal</SelectItem>
                     <SelectItem value="confidenceLevel">Confidence</SelectItem>
                     </SelectContent>
@@ -175,3 +176,4 @@ export default function FilterSortControls({
     </div>
   );
 }
+
