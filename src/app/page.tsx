@@ -59,15 +59,17 @@ export default function TradeWisePage() {
   const [isCoinListLoading, setIsCoinListLoading] = useState(false);
 
   useEffect(() => {
-    setIsCoinListLoading(true);
-    fetchCoinList()
-      .then(setCoinList)
-      .catch(err => {
-        console.error("Error fetching coin list for dialog:", err);
-        toast({ title: "Dialog Error", description: "Could not load coin list for adding holdings.", variant: "destructive" });
-      })
-      .finally(() => setIsCoinListLoading(false));
-  }, [toast]);
+    if (coinList.length === 0) {
+      setIsCoinListLoading(true);
+      fetchCoinList()
+        .then(setCoinList)
+        .catch(err => {
+          console.error("Error fetching coin list for dialog:", err);
+          toast({ title: "Dialog Error", description: "Could not load coin list for adding holdings.", variant: "destructive" });
+        })
+        .finally(() => setIsCoinListLoading(false));
+    }
+  }, [coinList.length, toast]);
 
 
   const performAnalysis = useCallback(async (symbolsToFetch?: string, timeFrameToUse?: TimeFrame, isAutoRefresh: boolean = false) => {

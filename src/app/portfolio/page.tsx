@@ -91,17 +91,18 @@ export default function PortfolioPage() {
   }, [loadHoldingsFromStorage]);
 
   useEffect(() => {
-    setIsDialogCoinListLoading(true);
-    fetchCoinList()
-      .then(list => setCoinListForDialog(list))
-      .catch(err => {
-        console.error("Error fetching coin list for dialog:", err);
-        setPageError("Could not load coin list. Adding new holdings via the generic dialog might be affected.");
-        // This toast is acceptable as it's a general setup error for a part of the page.
-        toast({ title: "Error", description: "Could not load coin list for adding new holdings.", variant: "destructive" });
-      })
-      .finally(() => setIsDialogCoinListLoading(false));
-  }, [toast]);
+    if (coinListForDialog.length === 0) {
+      setIsDialogCoinListLoading(true);
+      fetchCoinList()
+        .then(list => setCoinListForDialog(list))
+        .catch(err => {
+          console.error("Error fetching coin list for dialog:", err);
+          setPageError("Could not load coin list. Adding new holdings via the generic dialog might be affected.");
+          toast({ title: "Error", description: "Could not load coin list for adding new holdings.", variant: "destructive" });
+        })
+        .finally(() => setIsDialogCoinListLoading(false));
+    }
+  }, [coinListForDialog.length, toast]);
 
   useEffect(() => {
     if (holdings.length > 0) {
@@ -162,8 +163,6 @@ export default function PortfolioPage() {
     <main className="flex-grow container mx-auto px-2 sm:px-4 md:px-8 py-4 sm:py-8">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-foreground">My Portfolio</h1>
-        {/* The generic AddHoldingDialog is still available for cases where it might be triggered,
-            but no explicit button is rendered here. Adding primarily happens from the dashboard. */}
         <AddHoldingDialog
           isOpen={isAddDialogOpen}
           setIsOpen={setIsAddDialogOpen}
